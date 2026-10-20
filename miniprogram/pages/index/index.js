@@ -76,6 +76,12 @@ const TRIGRAM = {
 const SHENG = {木:"火",火:"土",土:"金",金:"水",水:"木"};
 const KE    = {木:"土",土:"水",水:"火",火:"金",金:"木"};
 const MCD_REAL = require("../../data/mcd_real.js");
+/* 实时数据（可选）：Token 从 config/token.js 注入（不入库）；没有就整段退回快照。
+ * require 全部防呆：对拍脚本会把计算区切到临时目录求值，缺模块时静默为 null。 */
+var LIVE_REAL = null;
+var MCD_CFG = null, MCD_API = null;
+try { MCD_CFG = require("../../config/token.js"); } catch (e) { MCD_CFG = null; }
+try { MCD_API = require("../../utils/mcd_api.js"); } catch (e) { MCD_API = null; }
 
 const LANG_WUXING = {
   python:["水","水一样的语言，绕得过坎，最适合写业务逻辑"],
@@ -455,6 +461,19 @@ Page({
   onLoad: function () {
     this.refreshClock();
     this.refreshWx();
+    this.fetchReal();
+  },
+
+  /* 实时只读咨询：拿到就换源重渲染；失败静默退回快照，不弹窗不打扰 */
+  fetchReal: function () {
+    var self = this;
+    if (!MCD_CFG || !MCD_CFG.MCD_MCP_TOKEN || MCD_CFG.MCD_MCP_TOKEN.indexOf("粘贴") >= 0) return;
+    MCD_API.consult(MCD_CFG.MCD_MCP_TOKEN, MCD_CFG.CITY, MCD_CFG.KEYWORD)
+      .then(function (res) {
+        if (!res || !res.ok) return;
+        LIVE_REAL = res;
+        if (self.data.asked) self.render(false);   /* 已出过卦：静默换实时数据 */
+      });
   },
 
   refreshClock: function () {
@@ -640,8 +659,9 @@ Page({
       yongLabel: ty.yongName + " · " + profileOf(m).yongXiang
     };
 
-    /* 真实数据快照（若存在）：点单券 / 最近门店 / 宜忌落地 */
-    var real = MCD_REAL && MCD_REAL.ok ? MCD_REAL : null;
+    /* 真实数据：实时 MCP 优先，取不到退回内置快照 */
+    var real = (LIVE_REAL && LIVE_REAL.ok) ? LIVE_REAL
+      : (MCD_REAL && MCD_REAL.ok ? MCD_REAL : null);
     if (real) {
       var wish = yj.order || orderOf(wx, ty.rel, sub, now) || "巨无霸";
       var keys = wish.split(/[配和或/、]/).filter(function (k) { return k.length >= 2; });
@@ -663,6 +683,7 @@ Page({
 
       vm.real = {
         fetchedAt: (real.fetched_at || "").slice(5, 16),
+        live: !!LIVE_REAL && LIVE_REAL.ok,
         coupon: cp ? cp.title : "",
         couponStatus: cp ? cp.status : "",
         store: st ? {

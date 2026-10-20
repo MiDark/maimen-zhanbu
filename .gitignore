@@ -26,3 +26,6 @@ fortune.json
 
 # 构建产物
 dist/
+
+# 小程序 Token 注入文件：只在本地存在，绝不入库（发布包里也含它，见 README 风险说明）
+miniprogram/config/token.js

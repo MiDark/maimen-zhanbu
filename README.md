@@ -69,10 +69,16 @@
 |---|---|---|---|---|
 | **技能版（参赛主体）** | `skill/SKILL.md` | WorkBuddy 对话触发，产出**本地可打开的网页命卡** | 可用 | 自备（只读真实数据） |
 | **网页体验版** | `web/index.html` | 浏览器/手机直接打开，纯前端零依赖 | **已上线**：<https://midark.github.io/maimen-zhanbu/> | 否 |
-| **小红书小工具版** | `miniprogram/` | 按小红书小程序规范，可发布为小工具 | 结构就绪，**尚未发布** | 否 |
+| **小红书小工具版** | `miniprogram/` | 按小红书小程序规范，可发布为小工具 | 结构就绪，待提交审核 | 可选内嵌（见下方风险说明） |
 
 > 小程序版是同一套逻辑的移植，代码与结构按小红书小工具规范写好，但还没提交审核上线；
 > 现在能直接玩的是网页版，能力最完整的是 WorkBuddy 技能版。
+>
+> **小程序版 Token 内嵌说明（2026-10-20 决策）**：小程序发布包是静态代码包，拿不到用户
+> 定位、也没有服务端，想接实时数据只能把 Token 写进包内。我们选择**内嵌一个专用只读
+> Token**（`miniprogram/config/token.js`，不入公开仓库，上传前本地生成），并强烈建议
+> 不要复用个人主力 Token——发布包可被解包提取，内嵌的 Token 应视为公开凭据。取不到
+> 数据时自动退回内置快照，卦照常算。
 
 ## 特性
 
@@ -131,7 +137,7 @@ MCD_MCP_TOKEN=你的TOKEN python3 scripts/fetch_real.py --city 成都 --keyword 
 默认**全脱敏**：个人积分三项一律写 `null`（页面显示「积分已脱敏」），便于安全提交。
 要连自己的积分一起写加 `--with-account`，但**别把结果提交进仓库**。没跑这一步，页面会显示「尚未接入真实数据」，其余功能照常。
 
-> 想直接在手机/浏览器玩？打开 <https://midark.github.io/maimen-zhanbu/>（纯前端，无 Token）。`miniprogram/` 是同款小红书小工具版，结构已按规范写好、尚未发布。
+> 想直接在手机/浏览器玩？打开 <https://midark.github.io/maimen-zhanbu/>（纯前端，无 Token）。`miniprogram/` 是同款小红书小工具版，结构已按规范写好、待提交审核。
 
 ## 目录
 
@@ -145,8 +151,10 @@ assets/ming_card.html       单文件命卡模板（命书折页，宣纸朱红�
 assets/avatar-512.png       技能头像（512×512，麦当劳红黄；build/make_avatar.py 生成）
 web/index.html              纯前端单页应用（今日/卦象/门店/我的，无 Token）
 web/mcd_data.js             真实数据快照（脱敏，可安全提交）
-miniprogram/                小红书小程序版（结构就绪，未发布；app.js/app.json/app.css + pages/index/*.xhsml）
-miniprogram/data/mcd_real.js 同一份快照（小程序 require）
+miniprogram/                小红书小程序版（结构就绪，待提交审核；app.js/app.json/app.css + pages/index/*.xhsml）
+miniprogram/data/mcd_real.js 同一份快照（小程序 require，兜底）
+miniprogram/utils/mcd_api.js 小程序端 MCP 只读客户端（实时优先，快照兜底）
+miniprogram/config/token.example.js 复制成 token.js 填 Token（token.js 不入库）
 samples/                    生成样例（命卡成品，可直接双击查看）
 references/mcd_mcp_tools.md 实测 35 工具清单与坑
 ```

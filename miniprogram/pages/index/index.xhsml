@@ -45,7 +45,7 @@
     </view>
 
     <view class="btn" bindtap="onCard">抽 今 日 命 卡</view>
-    <view class="src" wx:if="{{vm.real}}">麦当劳数据 · 抓取于 {{vm.real.fetchedAt}}</view>
+    <view class="src" wx:if="{{vm.real}}">麦当劳数据 · {{vm.real.live ? "实时" : "抓取于"}} {{vm.real.fetchedAt}}</view>
     <view class="src" wx:else>这会儿没读到数据 · 卦照常算</view>
   </view>
 
@@ -202,7 +202,7 @@
         </view>
       </view>
 
-      <view class="src">数据抓取于 {{vm.real.fetchedAt}} · 价格与库存以门店为准</view>
+      <view class="src">{{vm.real.live ? "实时读取" : "数据抓取"}}于 {{vm.real.fetchedAt}} · 价格与库存以门店为准</view>
     </block>
 
     <view class="empty" wx:else>
