@@ -182,6 +182,27 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
 }
 .src b{color:var(--cinnabar);font-weight:500;}
 
+/* ══════════════ Star 引导 ══════════════ */
+.star-cta{
+  margin-top:13px;padding:12px 14px;
+  border:1px dashed var(--cinnabar);background:rgba(181,74,58,.05);
+  text-align:center;font-size:13.5px;line-height:1.8;color:var(--ink-700);
+}
+.star-cta .st-t{
+  font-family:var(--serif);font-weight:900;color:var(--cinnabar);
+  letter-spacing:2px;font-size:15px;margin-bottom:2px;
+}
+.star-cta a{
+  color:var(--cinnabar);font-weight:700;text-decoration:underline;
+  text-underline-offset:3px;word-break:break-all;
+}
+.star-cta .st-name{
+  display:inline-block;margin:2px 0 0;padding:1px 9px;
+  border:1px solid var(--line);background:rgba(255,255,255,.62);
+  font-size:12.5px;letter-spacing:1px;color:var(--ink-900);
+  user-select:all;-webkit-user-select:all;
+}
+
 /* ══════════════ 通用块 ══════════════ */
 .vt{
   font-family:var(--serif);font-size:26px;font-weight:900;letter-spacing:3px;
@@ -566,6 +587,12 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
 
     <button class="btn" id="btnCard">抽 今 日 命 卡</button>
     <p class="src" id="srcLine">麦当劳数据</p>
+
+    <div class="star-cta">
+      <div class="st-t">觉 得 灵 ？ 去 点 个 星</div>
+      <a id="starLink" href="https://github.com/MiDark/maimen-zhanbu" target="_blank" rel="noopener">github.com/MiDark/maimen-zhanbu</a>
+      <div>打不开就在 GitHub 搜 <span class="st-name">maimen-zhanbu</span>，Star 就是香火 ⭐</div>
+    </div>
   </section>
 
   <!-- ══════════ 卦象 ══════════ -->
@@ -672,6 +699,12 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
       <div class="bt">带走一份</div>
       <button class="btn ghost" id="btnSavePage">存成网页</button>
       <button class="btn ghost" id="btnSaveImg">存成图片</button>
+    </div>
+
+    <div class="star-cta">
+      <div class="st-t">这 卦 还 能 更 灵</div>
+      <div>比赛评分看 GitHub Star 数：<a id="starLink2" href="https://github.com/MiDark/maimen-zhanbu" target="_blank" rel="noopener">MiDark/maimen-zhanbu</a></div>
+      <div>点一个 Star，麦门谢谢香火 ⭐</div>
     </div>
 
     <div class="block">
@@ -1718,6 +1751,15 @@ let START_NOW = new Date();
   $("sheet").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("on"); });
   $("btnSavePage").addEventListener("click", savePage);
   $("btnSaveImg").addEventListener("click", saveImage);
+  /* Star 引导：网页直接跳 GitHub；小工具容器禁外链，改为提示项目名 */
+  Array.prototype.forEach.call(document.querySelectorAll("[id^=starLink]"), function(el){
+    el.addEventListener("click", function(e){
+      if (window.xhs && window.xhs.miniTool){
+        e.preventDefault();
+        toast("GitHub 搜「maimen-zhanbu」点个 Star ⭐");
+      }
+    });
+  });
   $("btnAgain").addEventListener("click", function(){ ask(); });
   ask(true);
 })();

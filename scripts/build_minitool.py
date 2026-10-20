@@ -144,6 +144,13 @@ def build():
     # 4.5) 资源引用统一相对路径 ./ 前缀
     html = html.replace('src="mcd_data.js"', 'src="./mcd_data.js"')
 
+    # 4.6) 外链降级：容器禁打开外链，Star 链接去掉 href/target，点击由 JS 提示项目名
+    html = re.sub(
+        r'<a (id="starLink[^"]*") href="https://[^"]*" target="_blank" rel="noopener">',
+        r'<a \1 href="#">',
+        html,
+    )
+
     # 5) 写产物
     if OUT.exists():
         shutil.rmtree(OUT)
