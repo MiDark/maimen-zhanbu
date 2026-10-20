@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>麦门占卜 · 今日麦占</title>
+<meta name="description" content="给程序员的一天算一份口福：梅花易数时间卦，三秒告诉你今天点哪份。">
+<style>
+/* ══════════════ 设计令牌（承接命理全鉴：宣纸 / 墨 / 朱红 / 描金） ══════════════ */
+:root{
+  --paper:#F5F0E8;
+  --paper-2:#EFE8DA;
+  --paper-3:#E8E0D0;
+  --ink-900:#0D0D0D;
+  --ink-700:#2A2622;
+  --ink-500:#55504A;
+  --ink-300:#8B8479;
+  --cinnabar:#B54A3A;
+  --cinnabar-dark:#8B3A2E;
+  --gold:#C4A35A;
+  --green:#2F7D52;
+  --line:rgba(181,74,58,.16);
+  --line-2:rgba(13,13,13,.08);
+  --serif:"Noto Serif SC","Songti SC","SimSun",serif;
+  --sans:"Noto Sans SC","PingFang SC",-apple-system,"Helvetica Neue",sans-serif;
+  --tab-h:66px;
+  --max:480px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  background:var(--paper);
+  color:var(--ink-900);
+  font-family:var(--sans);
+  font-size:17px;
+  line-height:1.72;
+  min-height:100vh;
+  padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+  overflow-x:hidden;
+}
+/* 宣纸细纹：不用图片，两层极淡渐变 */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(0deg, rgba(13,13,13,.014) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 60% at 50% 0%, rgba(196,163,90,.10), transparent 60%);
+}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:none;cursor:pointer;}
+svg{display:block;}
+
+/* ══════════════ 顶栏 ══════════════ */
+.topbar{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:var(--max);margin:0 auto;
+  padding:12px 20px 10px;
+  font-size:13px;letter-spacing:1.5px;color:var(--ink-300);
+  background:linear-gradient(180deg, var(--paper) 72%, rgba(245,240,232,.86) 92%, rgba(245,240,232,0));
+  backdrop-filter:blur(6px);
+}
+.tb-mid{color:var(--cinnabar);letter-spacing:4px;font-family:var(--serif);font-size:12px;}
+
+/* ══════════════ 视图容器 ══════════════ */
+main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20px;}
+.view{display:none;animation:viewIn .28s ease both;}
+.view.on{display:block;}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+/* ══════════════ 卷首（居中） ══════════════ */
+.hero{text-align:center;padding:4px 0 0;}
+.hero-kicker{
+  font-size:12.5px;letter-spacing:2px;color:var(--ink-300);
+  margin-bottom:7px;line-height:1.5;
+}
+.hero-title{
+  font-family:var(--serif);
+  font-size:clamp(38px,11vw,48px);
+  font-weight:900;line-height:1.12;letter-spacing:6px;
+  text-indent:6px;
+  color:var(--ink-900);
+}
+.hero-sub{
+  margin-top:6px;font-size:14.5px;color:var(--ink-500);letter-spacing:.5px;
+}
+.tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+.tag{
+  font-size:13px;letter-spacing:1px;color:var(--cinnabar-dark);
+  border:1px solid var(--line);background:rgba(181,74,58,.05);
+  padding:4px 10px;
+}
+
+/* ══════════════ 麦气 ══════════════ */
+.score{
+  margin-top:12px;text-align:center;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:10px 0 9px;
+}
+.score-num{
+  font-family:var(--serif);font-weight:900;line-height:.92;
+  font-size:clamp(64px,19vw,84px);letter-spacing:-2px;
+  color:var(--cinnabar);
+  font-variant-numeric:tabular-nums;
+}
+.score-num small{font-size:20px;letter-spacing:2px;margin-left:6px;color:var(--ink-300);font-weight:400;}
+.score-grade{
+  display:inline-block;margin-top:2px;
+  font-family:var(--serif);font-size:18px;letter-spacing:8px;text-indent:8px;
+  color:var(--ink-900);
+}
+.score-line{margin-top:3px;font-size:15px;color:var(--ink-500);}
+.subj{
+  display:inline-block;margin-top:6px;padding:2px 10px;
+  font-size:11.5px;letter-spacing:.5px;color:var(--ink-300);
+  border:1px dashed var(--line);border-radius:999px;
+  background:rgba(255,255,255,.5);
+}
+.subj b{color:var(--cinnabar-dark);font-weight:600;}
+
+/* ══════════════ 今日点单（最重要的一张） ══════════════ */
+.order{
+  margin-top:12px;position:relative;
+  background:linear-gradient(160deg,#FFFDF8,#F3EDE0);
+  border:1px solid var(--line);
+  padding:14px 16px 12px;
+  box-shadow:0 6px 22px -18px rgba(13,13,13,.5);
+}
+.order::after{
+  content:"";position:absolute;inset:6px;border:1px solid rgba(196,163,90,.32);pointer-events:none;
+}
+.order-k{
+  font-size:12px;letter-spacing:7px;text-indent:7px;color:var(--cinnabar);
+  text-align:center;
+}
+.order-main{
+  margin-top:6px;text-align:center;
+  font-family:var(--serif);font-weight:900;
+  font-size:clamp(27px,8vw,33px);line-height:1.3;letter-spacing:1px;
+}
+.order-real{
+  margin-top:7px;text-align:center;font-size:13px;color:var(--green);line-height:1.55;
+  min-height:1px;
+}
+.order-real:empty{display:none;}
+.order-real b{color:var(--cinnabar);}
+.order-why{
+  margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);
+  font-size:13.5px;color:var(--ink-500);text-align:center;line-height:1.55;
+}
+
+/* ══════════════ 三件事 ══════════════ */
+.three{margin-top:11px;border:1px solid var(--line);background:rgba(255,255,255,.42);}
+.tr{display:flex;gap:10px;padding:7px 13px;align-items:flex-start;font-size:15px;line-height:1.6;}
+.tr + .tr{border-top:1px solid var(--line-2);}
+.tr i{
+  flex:none;width:24px;height:24px;display:grid;place-items:center;
+  font-style:normal;font-family:var(--serif);font-size:15px;
+  border:1px solid currentColor;
+}
+.tr.do i{color:var(--green);}
+.tr.dont i{color:var(--cinnabar);}
+.tr.note i{color:#9C7C2E;}
+.tr span{color:var(--ink-700);padding-top:2px;}
+
+/* ══════════════ 按钮 ══════════════ */
+.btn{
+  display:block;width:100%;margin-top:12px;
+  padding:13px 20px;
+  background:var(--cinnabar);color:#FFF8F0;
+  font-size:17px;letter-spacing:6px;text-indent:6px;
+  border:1px solid var(--cinnabar);
+  transition:background .2s ease;
+}
+.btn:active{background:var(--cinnabar-dark);}
+.btn.ghost{
+  background:transparent;color:var(--ink-700);border-color:var(--line);
+  font-size:15px;letter-spacing:3px;
+}
+.btn.ghost:active{background:rgba(181,74,58,.06);}
+.src{
+  margin:10px 0 3px;text-align:center;font-size:12.5px;color:var(--ink-300);letter-spacing:.5px;
+}
+.src b{color:var(--cinnabar);font-weight:500;}
+
+/* ══════════════ 通用块 ══════════════ */
+.vt{
+  font-family:var(--serif);font-size:26px;font-weight:900;letter-spacing:3px;
+  text-align:center;padding:18px 0 6px;
+}
+.vs{text-align:center;font-size:13px;color:var(--ink-300);margin-bottom:6px;}
+.block{margin-top:26px;}
+.bt{
+  font-size:13px;letter-spacing:4px;color:var(--cinnabar);
+  padding-left:10px;border-left:3px solid var(--cinnabar);
+  margin-bottom:12px;line-height:1.4;
+}
+.note{font-size:14px;color:var(--ink-300);line-height:1.7;}
+
+/* ══════════════ 卦象 ══════════════ */
+.gua-main{text-align:center;padding:20px 0 6px;border-bottom:1px solid var(--line);}
+.hex{display:flex;flex-direction:column;gap:8px;width:120px;margin:0 auto;}
+.hex .yao{
+  display:block;height:13px;background:var(--ink-900);
+  transform-origin:center;
+}
+.hex .yao.yin{
+  background:linear-gradient(90deg,var(--ink-900) 0 41%,transparent 41% 59%,var(--ink-900) 59% 100%);
+}
+.hex .yao.dong{background-color:var(--cinnabar);}
+.hex .yao.yin.dong{
+  background:linear-gradient(90deg,var(--cinnabar) 0 41%,transparent 41% 59%,var(--cinnabar) 59% 100%);
+}
+.gm-name{
+  font-family:var(--serif);font-size:34px;font-weight:900;letter-spacing:4px;text-indent:4px;
+  margin-top:20px;
+}
+.gm-tag{font-size:13.5px;letter-spacing:2px;color:var(--ink-300);margin-top:6px;}
+.gm-say{font-size:16px;color:var(--ink-700);margin-top:14px;line-height:1.75;}
+
+.yao-card{
+  border:1px solid var(--line);background:rgba(255,255,255,.45);
+  padding:18px 18px 16px;
+}
+.yc-pos{font-family:var(--serif);font-size:22px;font-weight:900;letter-spacing:3px;}
+.yc-pos em{font-style:normal;color:var(--cinnabar);}
+.yc-stage{font-size:14px;color:var(--ink-300);margin-top:4px;}
+.yc-text{font-size:16px;margin-top:10px;color:var(--ink-700);}
+.yc-note{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);font-size:14px;color:var(--ink-500);}
+
+.tris{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);}
+.tri{display:flex;gap:16px;padding:16px;align-items:center;background:rgba(255,255,255,.4);}
+.tri + .tri{border-top:1px solid var(--line-2);}
+.tri.now{background:rgba(181,74,58,.06);}
+.tri .hex{width:62px;gap:4px;margin:0;flex:none;}
+.tri .hex .yao{height:6px;}
+.tri-b{flex:1;min-width:0;}
+.tri-k{font-size:11.5px;letter-spacing:2px;color:var(--ink-300);}
+.tri-n{font-family:var(--serif);font-size:19px;font-weight:900;letter-spacing:2px;margin-top:2px;}
+.tri-g{font-size:12px;color:var(--ink-300);margin-top:1px;}
+.tri-d{font-size:13.5px;color:var(--ink-500);margin-top:6px;line-height:1.6;}
+
+.ty{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);}
+.ty div{background:var(--paper);padding:16px;text-align:center;}
+.ty b{display:block;font-family:var(--serif);font-size:20px;font-weight:900;letter-spacing:2px;}
+.ty small{font-size:12px;color:var(--ink-300);letter-spacing:1px;}
+.ty p{font-size:13.5px;color:var(--ink-500);margin-top:6px;line-height:1.6;}
+.ty .full{grid-column:1/-1;background:rgba(181,74,58,.05);}
+.ty .full b{color:var(--cinnabar);}
+
+.lucky{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.lk{border:1px solid var(--line);padding:14px;background:rgba(255,255,255,.4);}
+.lk i{display:block;font-style:normal;font-size:11.5px;letter-spacing:2px;color:var(--ink-300);}
+.lk b{display:block;font-family:var(--serif);font-size:17px;font-weight:900;margin-top:5px;letter-spacing:1px;}
+
+.fold{margin-top:24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.fold summary{
+  list-style:none;padding:16px 2px;font-size:14px;color:var(--ink-500);
+  letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+}
+.fold summary::-webkit-details-marker{display:none;}
+.fold summary::after{content:"展开";font-size:12px;color:var(--ink-300);}
+.fold[open] summary::after{content:"收起";}
+.fold-body{padding:0 2px 18px;font-size:14px;color:var(--ink-500);line-height:1.9;}
+.fold-body table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.fold-body td{padding:7px 0;border-bottom:1px solid var(--line-2);}
+.fold-body td:first-child{color:var(--ink-300);width:34%;}
+
+/* ══════════════ 门店 ══════════════ */
+.store-hero{
+  border:1px solid var(--line);background:linear-gradient(160deg,#FFFDF8,#F1EADA);
+  padding:20px;text-align:center;
+}
+.sh-dist{font-family:var(--serif);font-size:42px;font-weight:900;color:var(--cinnabar);line-height:1;}
+.sh-dist small{font-size:16px;color:var(--ink-300);font-weight:400;margin-left:4px;}
+.sh-name{font-family:var(--serif);font-size:19px;font-weight:900;margin-top:12px;letter-spacing:1px;}
+.sh-meta{font-size:13px;color:var(--ink-500);margin-top:6px;}
+.sh-tags{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+.sh-tags span{font-size:11.5px;padding:3px 9px;border:1px solid var(--line);color:var(--cinnabar-dark);}
+
+.list{margin-top:12px;border:1px solid var(--line);}
+.li{display:flex;gap:12px;padding:14px 16px;align-items:center;background:rgba(255,255,255,.4);}
+.li + .li{border-top:1px solid var(--line-2);}
+.li-n{flex:1;min-width:0;}
+.li-t{font-size:15px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.li-s{font-size:12.5px;color:var(--ink-300);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.li-d{flex:none;font-family:var(--serif);font-size:15px;color:var(--cinnabar);}
+
+.coupons{display:flex;flex-direction:column;gap:10px;}
+.cp{
+  display:flex;align-items:center;gap:14px;
+  border:1px solid var(--line);border-left:3px solid var(--cinnabar);
+  padding:14px 16px;background:rgba(255,255,255,.5);
+}
+.cp-t{flex:1;font-size:16px;font-family:var(--serif);font-weight:700;letter-spacing:.5px;}
+.cp-s{flex:none;font-size:11.5px;color:var(--green);border:1px solid rgba(47,125,82,.3);padding:2px 8px;}
+
+.camps{display:flex;flex-direction:column;gap:10px;}
+.camp{padding:14px 16px;border:1px solid var(--line);background:rgba(255,255,255,.4);}
+.camp-t{font-size:15px;line-height:1.6;}
+.camp-d{font-size:12px;color:var(--ink-300);margin-top:5px;letter-spacing:.5px;}
+.camp-d em{font-style:normal;color:var(--cinnabar);}
+
+.empty{
+  padding:26px 18px;text-align:center;border:1px dashed var(--line);
+  font-size:14px;color:var(--ink-300);line-height:1.8;
+}
+
+/* ══════════════ 我的 ══════════════ */
+.form{border:1px solid var(--line);background:rgba(255,255,255,.42);}
+.fld{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 16px;}
+.fld + .fld{border-top:1px solid var(--line-2);}
+.fld label{font-size:15.5px;color:var(--ink-700);}
+.fld select,.fld input{
+  font-family:inherit;font-size:15px;color:var(--ink-900);
+  background:transparent;border:1px solid var(--line);border-radius:0;
+  padding:8px 30px 8px 12px;min-width:132px;text-align:right;appearance:none;
+  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23B54A3A' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;
+}
+/* 数字框别继承 select 的下拉箭头 —— 带箭头却不能选，是最典型的假控件 */
+.fld input{
+  width:96px;min-width:0;text-align:center;
+  background-image:none;padding:8px 10px;appearance:textfield;
+}
+.fld input::-webkit-outer-spin-button,
+.fld input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+/* 开关：原来轨道是 0.6 白 + 极浅描边，在白底上几乎看不见，只看得见那个灰方块 */
+.fld-sw{
+  display:inline-flex;flex:none;width:54px;height:30px;position:relative;cursor:pointer;
+  border:1px solid rgba(13,13,13,.18);background:var(--paper-warm);
+}
+.fld-sw::after{
+  content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;
+  background:#FFFDF8;border:1px solid rgba(13,13,13,.16);
+  transition:transform .2s,background .2s,border-color .2s;
+}
+.fld-sw.on{border-color:var(--cinnabar);background:rgba(181,74,58,.14);}
+.fld-sw.on::after{transform:translateX(24px);background:var(--cinnabar);border-color:var(--cinnabar-dark);}
+
+.about{padding:18px 0;font-size:13.5px;color:var(--ink-500);line-height:1.9;}
+.about b{color:var(--ink-700);}
+.about code{
+  font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;
+  background:rgba(181,74,58,.08);color:var(--cinnabar-dark);
+  padding:1px 5px;border:1px solid var(--line);border-radius:2px;
+  word-break:break-all;
+}
+.seal{
+  width:64px;height:64px;margin:22px auto 8px;
+  border:2px solid var(--cinnabar);color:var(--cinnabar);
+  display:grid;place-items:center;
+  font-family:var(--serif);font-size:14px;font-weight:900;line-height:1.25;letter-spacing:1px;
+  text-align:center;
+}
+.copy{text-align:center;font-size:11.5px;color:var(--ink-300);letter-spacing:2px;}
+
+/* ══════════════ 底栏 ══════════════ */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  display:flex;align-items:stretch;
+  max-width:var(--max);margin:0 auto;
+  height:var(--tab-h);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  background:rgba(245,240,232,.94);
+  backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--ink-300);font-size:11.5px;letter-spacing:1.5px;
+  transition:color .18s ease;
+}
+.tab svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.tab.on{color:var(--cinnabar);}
+.tab.on svg{stroke-width:1.9;}
+
+/* ══════════════ 命卡弹层 ══════════════ */
+.sheet{
+  position:fixed;inset:0;z-index:60;display:none;
+  background:rgba(13,13,13,.5);
+  backdrop-filter:blur(3px);
+}
+.sheet.on{display:block;}
+.sheet-in{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(88vw,360px);
+  animation:popIn .3s cubic-bezier(.2,.9,.25,1) both;
+}
+@keyframes popIn{from{opacity:0;transform:translate(-50%,-46%) scale(.94);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+.card-face{
+  position:relative;aspect-ratio:3/4;
+  background:linear-gradient(155deg,#1A1614 0%,#2A211C 48%,#16110F 100%);
+  border:1px solid rgba(196,163,90,.5);
+  box-shadow:0 30px 60px -24px rgba(0,0,0,.7);
+  color:#F3E9D6;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px 22px 30px;
+  overflow:hidden;
+}
+.card-face::before{
+  content:"";position:absolute;inset:9px;border:1px solid rgba(196,163,90,.28);pointer-events:none;
+}
+.cf-hex{display:flex;flex-direction:column;gap:7px;width:96px;opacity:.9;margin-bottom:24px;}
+.cf-hex .yao{display:block;height:8px;background:#E8DCC2;}
+.cf-hex .yao.yin{background:linear-gradient(90deg,#E8DCC2 0 41%,transparent 41% 59%,#E8DCC2 59% 100%);}
+.cf-name{
+  font-family:var(--serif);font-size:30px;font-weight:900;letter-spacing:4px;text-indent:4px;
+  text-align:center;color:#F6EEDC;
+}
+.cf-star{
+  font-family:var(--serif);font-size:15px;letter-spacing:5px;text-indent:5px;color:var(--gold);
+  margin-top:10px;text-align:center;
+}
+.cf-bless{margin-top:18px;padding:0 2px;
+  font-size:13px;line-height:1.9;letter-spacing:0;color:rgba(243,233,214,.78);text-align:center;
+  padding:0 6px;
+}
+.cf-seal{position:absolute;right:18px;bottom:16px;
+  width:40px;height:40px;border:1.5px solid var(--cinnabar);
+  color:var(--cinnabar);display:grid;place-items:center;
+  font-family:var(--serif);font-size:19px;font-weight:900;
+}
+.sheet-close{
+  margin:16px auto 0;display:block;color:rgba(255,255,255,.85);
+  font-size:13px;letter-spacing:3px;padding:10px 24px;
+  border:1px solid rgba(255,255,255,.25);
+}
+
+/* 起卦仪式 */
+.ritual{
+  position:fixed;inset:0;z-index:70;display:none;place-items:center;
+  background:var(--paper);
+}
+.ritual.on{display:grid;}
+.ritual-in{text-align:center;}
+.rh{display:flex;flex-direction:column;gap:9px;width:110px;margin:0 auto 26px;}
+.rh .yao{
+  height:11px;background:var(--ink-900);opacity:.1;
+  transition:opacity .22s ease;
+}
+.rh .yao.yin{background:linear-gradient(90deg,var(--ink-900) 0 41%,transparent 41% 59%,var(--ink-900) 59% 100%);}
+.rh .yao.on{opacity:1;}
+.ritual-t{font-family:var(--serif);font-size:17px;letter-spacing:8px;text-indent:8px;color:var(--ink-500);}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(var(--tab-h) + 24px + env(safe-area-inset-bottom,0px));
+  transform:translate(-50%,12px);z-index:90;
+  background:rgba(13,13,13,.9);color:#F3E9D6;
+  font-size:13.5px;letter-spacing:1px;padding:11px 18px;
+  opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;
+  max-width:80vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+
+
+/* 首屏 CTA：不用 sticky —— 实测 sticky 会把按钮压到宜忌上，宁可再压缩排版 */
+#btnCard{box-shadow:0 10px 26px -16px rgba(181,74,58,.5);}
+
+/* 矮屏（笔电半窗、小手机）：先砍装饰，保住「标题 / 麦气 / 点单 / 宜忌 / 按钮」 */
+@media (max-height:760px){
+  .hero-kicker{display:none;}
+  .hero-title{font-size:clamp(34px,10.5vw,46px);letter-spacing:4px;}
+  .hero-sub{margin-top:4px;font-size:13.5px;}
+  .tags{margin-top:8px;}
+  .tag{font-size:12px;padding:3px 9px;}
+  .score{margin-top:8px;padding:7px 0 6px;}
+  .score-num{font-size:clamp(54px,16.5vw,70px);}
+  .score-grade{font-size:16px;}
+  .score-line{font-size:14px;}
+  .order{margin-top:8px;padding:10px 14px 9px;}
+  .order-main{font-size:clamp(22px,7vw,27px);}
+  .order-why{margin-top:7px;padding-top:7px;font-size:13px;}
+  .three{margin-top:7px;}
+  .tr{padding:6px 13px;font-size:14.5px;}
+  #btnCard{margin-top:7px;padding:11px 20px;font-size:16px;}
+  .src{margin:5px 0 2px;font-size:11.5px;}
+}
+
+@media (max-height:700px){
+  /* 一屏更紧：先去掉解释句，宜/忌必须留在首屏（那是能直接照做的部分） */
+  .order-why{display:none;}
+  .order{padding-bottom:10px;}
+}
+
+@media (max-height:540px){
+  /* 小手机（360×640 一类）：缩字号、去掉「今日点单」小标，底栏也收矮一点 */
+  :root{--tab-h:58px;}
+  .hero-title{font-size:clamp(28px,9vw,34px);}
+  .score-num{font-size:clamp(46px,14vw,58px);}
+  .order-k{display:none;}
+  .tr{padding:5px 12px;}
+}
+
+@media (max-height:620px){
+  .hero-kicker{display:none;}
+  .hero-sub{display:none;}
+  .tags{display:none;}
+  .score-line{display:none;}
+  .subj{display:none;}
+  .src{display:none;}
+}
+
+/* 宽屏：仍是一张居中竖卷 */
+@media (min-width:620px){
+  body{background:#EFE9DC;}
+  body::before{display:none;}
+  .topbar,.tabbar{box-shadow:0 0 0 1px var(--line);}
+  main{padding:0 24px;}
+  .view.on{background:var(--paper);}
+  /* 今日页内容常不足一屏：宽屏高够时垂直居中，避免与底栏之间悬出大片空白；
+     safe 兜底——内容真的超高时退回顶部对齐，不会把上面裁掉 */
+  #v-today.on{
+    display:flex;flex-direction:column;
+    justify-content:center;justify-content:safe center;
+    min-height:calc(100vh - var(--tab-h) - 46px);
+  }
+  /* 高桌上铺开的那张纸：加左右描边与一点阴影，竖卷不至于「漂」 */
+  main{
+    border-left:1px solid var(--line);border-right:1px solid var(--line);
+    background:var(--paper);
+    box-shadow:0 0 60px rgba(13,13,13,.05);
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span id="tbDate">—</span>
+  <span class="tb-mid">麦 门 占 卜</span>
+  <span id="tbShi">—</span>
+</header>
+
+<main>
+  <!-- ══════════ 今日 ══════════ -->
+  <section class="view on" id="v-today">
+    <div class="hero">
+      <div class="hero-kicker">给 程 序 员 的 一 天 · 起一卦，看你今天点哪份</div>
+      <h1 class="hero-title">今日麦占</h1>
+      <div class="tags" id="tags"></div>
+    </div>
+
+    <div class="score">
+      <div class="score-num"><span id="scoreNum">--</span><small>分</small></div>
+      <div class="score-grade" id="scoreGrade">—</div>
+      <p class="score-line" id="scoreLine">—</p>
+      <button class="subj" id="subjLine" type="button">只按此刻起卦</button>
+    </div>
+
+    <div class="order">
+      <div class="order-k">今 日 点 单</div>
+      <div class="order-main" id="orderMain">—</div>
+      <div class="order-real" id="orderReal"></div>
+      <div class="order-why" id="orderWhy">—</div>
+    </div>
+
+    <div class="three">
+      <div class="tr do"><i>宜</i><span id="tDo">—</span></div>
+      <div class="tr dont"><i>忌</i><span id="tDont">—</span></div>
+    </div>
+
+    <button class="btn" id="btnCard">抽 今 日 命 卡</button>
+    <p class="src" id="srcLine">麦当劳数据</p>
+  </section>
+
+  <!-- ══════════ 卦象 ══════════ -->
+  <section class="view" id="v-gua">
+    <h2 class="vt">今日卦象</h2>
+    <p class="vs" id="guaWise">—</p>
+
+    <div class="gua-main">
+      <div class="hex" id="hexMain"></div>
+      <div class="gm-name" id="guaName">—</div>
+      <div class="gm-tag" id="guaTag">—</div>
+      <div class="gm-say" id="guaSay">—</div>
+    </div>
+
+    <div class="block">
+      <div class="bt">这一爻在说什么</div>
+      <div class="yao-card">
+        <div class="yc-pos" id="yaoPos">—</div>
+        <div class="yc-stage" id="yaoStage">—</div>
+        <div class="yc-text" id="yaoText">—</div>
+        <div class="yc-note" id="yaoNote">—</div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="bt">今天的三段走势</div>
+      <div class="tris" id="tris"></div>
+    </div>
+
+    <div class="block">
+      <div class="bt">你和这顿麦</div>
+      <div class="ty" id="tyBox"></div>
+    </div>
+
+    <div class="block">
+      <div class="bt">今日幸运物</div>
+      <div class="lucky" id="lucky"></div>
+    </div>
+
+    <details class="fold">
+      <summary>卦是怎么来的</summary>
+      <div class="fold-body">
+        <table id="qiTable"></table>
+        <p style="margin-top:12px;">不用懂也没关系，上面那几句才是结论。这一页只是给好奇的人留个底。</p>
+      </div>
+    </details>
+
+    <button class="btn ghost" id="btnAgain">换 个 时 辰 再 算</button>
+  </section>
+
+  <!-- ══════════ 门店 ══════════ -->
+  <section class="view" id="v-store">
+    <h2 class="vt">附近麦门</h2>
+    <p class="vs" id="storeSrc">附近门店 · 数据来自麦当劳</p>
+    <div id="storeBox"></div>
+
+    <div class="block">
+      <div class="bt">能领的券</div>
+      <div class="coupons" id="couponList"></div>
+    </div>
+
+    <div class="block">
+      <div class="bt">这个月的活动</div>
+      <div class="camps" id="campList"></div>
+    </div>
+
+    <div class="block">
+      <div class="bt">我的麦麦</div>
+      <div class="ty" id="pointBox"></div>
+    </div>
+
+    <p class="src" id="storeFoot">—</p>
+  </section>
+
+  <!-- ══════════ 我的 ══════════ -->
+  <section class="view" id="v-me">
+    <h2 class="vt">我的外应</h2>
+    <p class="vs">今天干了什么，算得更准一点</p>
+
+    <div class="form">
+      <div class="fld">
+        <label for="langSel">今天写什么</label>
+        <select id="langSel"></select>
+      </div>
+      <div class="fld">
+        <label for="inCommits">提交几次</label>
+        <input id="inCommits" type="number" inputmode="numeric" min="0" max="99" value="0">
+      </div>
+      <div class="fld">
+        <label for="inBugs">出了几个错</label>
+        <input id="inBugs" type="number" inputmode="numeric" min="0" max="99" value="0">
+      </div>
+      <div class="fld">
+        <label>今天加班了吗</label>
+        <span class="fld-sw" id="swOt" role="switch" aria-checked="false" tabindex="0"></span>
+      </div>
+    </div>
+
+    <p class="note" id="subHint">改完立刻生效，不用点按钮；外应只影响分数与点单，不影响卦象。</p>
+
+    <button class="btn" id="btnRecalc">重 新 起 卦</button>
+
+    <div class="block">
+      <div class="bt">带走一份</div>
+      <button class="btn ghost" id="btnSavePage">存成网页</button>
+      <button class="btn ghost" id="btnSaveImg">存成图片</button>
+    </div>
+
+    <div class="block">
+      <div class="bt">能看到我自己的吗</div>
+      <div class="about">
+        这一版用的是<b>公开数据</b>（什么时候抓的写在页脚），不碰你的账号，
+        所以不用登录，也不用填任何东西。
+        <br><br>
+        想看<b>你自己的积分</b>和<b>常去的那家店</b>，在 WorkBuddy 里装这个技能，
+        用麦当劳账号申请一次 MCP 权限就行。
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="bt">关于这个玩意儿</div>
+      <div class="about">
+        卦是正经梅花易数：拿此刻的年月日时起卦，翻动爻看变化，再用五行论生克。
+        <br><br>
+        话不正经，就为让你在工位上笑一下。<b>不碰生辰八字</b>，不上传任何个人信息；
+        门店、券、活动来自麦当劳公开数据，只查不买，不会替你下单或领券。
+        <br><br>
+        仅供娱乐，不构成任何建议。信则有，不信也得吃饭。
+      </div>
+      <div class="seal">墨喵<br>之印</div>
+      <p class="copy">麦门占卜 · 程序员麦占</p>
+    </div>
+  </section>
+</main>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab on" data-v="today">
+    <svg viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.3 6.3L4.9 4.9M19.1 19.1l-1.4-1.4M17.7 6.3l1.4-1.4M4.9 19.1l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg>
+    <span>今日</span>
+  </button>
+  <button class="tab" data-v="gua">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h5M15 12h5M4 18h16"/></svg>
+    <span>卦象</span>
+  </button>
+  <button class="tab" data-v="store">
+    <svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+    <span>门店</span>
+  </button>
+  <button class="tab" data-v="me">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4S18.3 16.4 19.5 20"/></svg>
+    <span>我的</span>
+  </button>
+</nav>
+
+<!-- 命卡 -->
+<div class="sheet" id="sheet">
+  <div class="sheet-in">
+    <div class="card-face">
+      <div class="cf-hex" id="cfHex"></div>
+      <div>
+        <div class="cf-name" id="cfName">—</div>
+        <div class="cf-star" id="cfStar">—</div>
+      </div>
+      <div class="cf-bless" id="cfBless">—</div>
+      <div class="cf-seal">麦</div>
+    </div>
+    <button class="sheet-close" id="sheetClose">收 起</button>
+  </div>
+</div>
+
+<!-- 起卦仪式 -->
+<div class="ritual" id="ritual">
+  <div class="ritual-in">
+    <div class="rh" id="rh"></div>
+    <div class="ritual-t" id="ritualT">起 卦</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="mcd_data.js"></script>
+<script>
+const GUA64 = {
+  "1,1":["乾为天","天时正好，宜一口气把活儿干完，忌嘴上一句「马上就好」"],
+  "8,8":["坤为地","地气够稳，宜老老实实吃顿饱的，忌硬撑着节食"],
+  "6,4":["水雷屯","开局就卡，宜先来份薯条垫垫，忌空着肚子改需求"],
+  "7,6":["山水蒙","脑子没开机，宜问清楚了再动手，忌瞎猜产品想要啥"],
+  "6,1":["水天需","还得再等等，宜先来个圆筒，忌催着上线"],
+  "1,6":["天水讼","容易抬杠，宜退半步吃口堡，忌在群里跟人对线"],
+  "8,6":["地水师","人多事也杂，宜分好工各点各的，忌一锅乱炖"],
+  "6,8":["水地比","人缘挺旺，宜拉个人拼个随心配，忌自己闷头吃"],
+  "5,1":["风天小畜","攒着点好，宜加个小食不加大，忌一顿点太多"],
+  "1,2":["天泽履","步步踩线，宜小心着提交，忌手一抖 force push"],
+  "8,1":["地天泰","通泰顺遂，宜照着计划走，忌临时给自己加戏"],
+  "1,8":["天地否","气有点堵，宜先搁着别硬推，忌今天硬上线"],
+  "1,3":["天火同人","合得来，宜结对子一起干，忌各改各的"],
+  "3,1":["火天大有","手气正旺，宜点份好的犒劳自己，忌一个人吃独食"],
+  "8,7":["地山谦","低调点好，宜闷声吃堡，忌发圈炫加班"],
+  "4,8":["雷地豫","心情不错，宜慢慢吃不着急，忌边吃边改 bug"],
+  "2,4":["泽雷随","跟着走就行，宜听安排，忌另开一摊"],
+  "7,5":["山风蛊","旧账要清，宜先收拾烂摊子，忌再堆新需求"],
+  "8,2":["地泽临","适合靠近点，宜当面聊两句，忌在文档里打太极"],
+  "5,8":["风地观","先看着别急，宜摸清底细，忌抢着表态"],
+  "3,4":["火雷噬嗑","有硬骨头，宜先啃最难的，忌拖到下班"],
+  "7,3":["山火贲","适合包装，宜把 demo 弄漂亮点，忌只剩个壳"],
+  "7,8":["山地剥","有点漏气，宜收着点，忌大改特改"],
+  "8,4":["地雷复","缓过来了，宜早睡补觉，忌熬夜硬扛"],
+  "1,4":["天雷无妄","别乱来，宜守规矩，忌顺手改别人的代码"],
+  "7,1":["山天大畜","劲攒足了，宜蓄着待发，忌现在就 all in"],
+  "7,4":["山雷颐","该补了，宜正经吃一顿，忌拿咖啡当饭"],
+  "2,5":["泽风大过","有点过头，宜适可而止，忌一口气点三份"],
+  "6,6":["坎为水","坑有点多，宜稳着走，忌硬闯"],
+  "3,3":["离为火","状态在线，宜多输出，忌光说不动手"],
+  "2,7":["泽山咸","容易来电，宜真诚点，忌端着架子"],
+  "4,5":["雷风恒","贵在坚持，宜按节奏来，忌干两天停三天"],
+  "1,7":["天山遯","该撤就撤，宜早点下班，忌死磕到底"],
+  "4,1":["雷天大壮","气势够足，宜趁热打铁，忌用力过猛"],
+  "3,8":["火地晋","往上升，宜主动争取，忌等着被发现"],
+  "8,3":["地火明夷","光被遮住，宜低调养着，忌抢风头"],
+  "5,3":["风火家人","适合收拾，宜整理下工位，忌管别人闲事"],
+  "3,2":["火泽睽","有点拧巴，宜求同存异，忌非要分个对错"],
+  "6,7":["水山蹇","路不好走，宜绕一绕，忌硬顶"],
+  "4,6":["雷水解","结开了，宜把拖着的事办掉，忌继续攒"],
+  "7,2":["山泽损","该减了，宜做减法，忌什么都想要"],
+  "5,4":["风雷益","有进益，宜顺手帮人一把，忌独占好处"],
+  "2,1":["泽天夬","该断了，宜果断砍需求，忌犹犹豫豫"],
+  "1,5":["天风姤","容易撞上，宜留个心眼，忌什么局都去"],
+  "2,8":["泽地萃","人聚齐了，宜组个饭局，忌各吃各的"],
+  "8,5":["地风升","慢慢往上，宜一步一步来，忌想一步登天"],
+  "2,6":["泽水困","有点困住，宜先歇口气，忌硬求"],
+  "6,5":["水风井","井水不枯，宜复盘沉淀，忌原地打转"],
+  "2,3":["泽火革","该换了，宜推倒重来，忌修修补补"],
+  "3,5":["火风鼎","要上新，宜换套新方案，忌将就"],
+  "4,4":["震为雷","动静不小，宜开个新坑，忌犹豫半天"],
+  "7,7":["艮为山","该停了，宜收工走人，忌再改一版"],
+  "5,7":["风山渐","慢慢来，宜按部就班，忌跳步骤"],
+  "4,2":["雷泽归妹","别急着定，宜先说清楚，忌仓促答应"],
+  "4,3":["雷火丰","正当其时，宜趁势干票大的，忌过了头"],
+  "3,7":["火山旅","在外奔波，宜就近吃，忌跑太远"],
+  "5,5":["巽为风","润物无声，宜小步推进，忌硬刚"],
+  "2,2":["兑为泽","和气生财，宜好好说话，忌嘴上不饶人"],
+  "5,6":["风水涣","该散了，宜把心结解开，忌憋着"],
+  "6,2":["水泽节","有节制，宜量力点单，忌报复性消费"],
+  "5,2":["风泽中孚","讲信用，宜说到做到，忌画大饼"],
+  "4,7":["雷山小过","小事可为，宜小改小动，忌大动干戈"],
+  "6,3":["水火既济","事已成了，宜收尾查一遍，忌松劲"],
+  "3,6":["火水未济","还差一点，宜善始善终，忌最后翻车"]
+};
+
+const TRIGRAM = {
+  1:["乾","金","☰"], 2:["兑","金","☱"], 3:["离","火","☲"], 4:["震","木","☳"],
+  5:["巽","木","☴"], 6:["坎","水","☵"], 7:["艮","土","☶"], 8:["坤","土","☷"]
+};
+const SHENG = {木:"火",火:"土",土:"金",金:"水",水:"木"};
+const KE    = {木:"土",土:"水",水:"火",火:"金",金:"木"};
+const LANG_WUXING = {
+  python:["水","水一样的语言，绕得过坎，最适合写业务逻辑"],
+  java:["土","厚土压得住场，企业级系统还得看它"],
+  c:["金","最贴机器的语言，硬核但不好伺候"],
+  "c++":["金","一把锋利的刀，能砍硬骨头也能砍到自己"],
+  go:["木","长得快、并发多，云上跑得欢"],
+  rust:["金","炼得很纯的铁，编译器比你还操心"],
+  javascript:["火","点着就着，前端全靠它照亮"],
+  typescript:["火","给火加了个炉膛，烧得旺还不乱窜"],
+  php:["土","老土壤了，半个互联网都长在上面"],
+  ruby:["木","柔软好使，写着写着人就开心了"],
+  kotlin:["土","安卓的老底子，稳当还爱纳新"],
+  swift:["金","快得像风，果家的专属刀"],
+  lua:["木","轻得像叶子，嵌进哪儿都能活"]
+};
+const MING_CARDS = [
+  ["巨无霸","双层至尊","两片牛肉夹住你今天的 KPI，吃它就等于给自己盖了个稳章"],
+  ["麦辣鸡腿堡","辣度担当","一口下去思路就通了，辣是程序员的强制刷新"],
+  ["麦旋风","转圈大师","脑子转不动就先吃口转的，转着转着就想通了"],
+  ["薯条","万恶之源","一根接一根，进度和薯条一起见底，记得多要两包番茄酱"],
+  ["麦乐鸡","六块正好","不多不少正好六块，够你撑到下一次提交"],
+  ["吉士汉堡","一片芝士","朴素但顶饱，今天不折腾，稳稳收工"],
+  ["板烧鸡腿堡","不炸主义者","不油炸也香，今天走温和路线，别硬刚"],
+  ["圆筒冰淇淋","甜筒收尾","甜的先顶上，苦的放明天，一天才算完整"]
+];
+/* 今日点单池：五行定池，外应与时辰定轮（改语言/提交/出错/加班都会挪位） */
+const ORDER_POOL = {
+  "金": ["薯条配麦乐鸡", "麦香鱼配薯条", "麦乐鸡配玉米杯", "薯条配圆筒冰淇淋"],
+  "木": ["板烧鸡腿堡配鲜蔬杯", "双吉汉堡配鲜煮咖啡", "麦香鱼配蔬菜色拉", "吉士汉堡配玉米杯"],
+  "水": ["麦旋风配可乐", "圆筒冰淇淋配麦乐鸡", "麦乐鸡配冰咖啡", "冰咖啡配吉士汉堡"],
+  "火": ["麦辣鸡腿堡", "麦辣鸡翅配可乐", "麦辣鸡腿堡配薯条", "麦辣鸡翅配麦乐鸡"],
+  "土": ["巨无霸", "双层吉士汉堡配薯条", "巨无霸配麦乐鸡", "吉士汉堡配薯饼"]
+};
+const MILD_POOL = ["麦香鱼配薯条", "板烧鸡腿堡配鲜蔬杯", "吉士汉堡配可乐", "玉米杯配麦乐鸡"];
+const BREAKFAST_POOL = ["猪柳蛋麦满分配薯饼", "吉士蛋麦满分配热香饼", "猪柳蛋麦满分配豆浆", "薯饼配热豆浆"];
+function orderOf(wx, rel, sub, dt){
+  const lang = (sub.lang || "").toLowerCase();
+  let lh = 0;
+  for (let i = 0; i < lang.length; i++) lh += lang.charCodeAt(i);
+  const seed = sub.commits * 3 + sub.bugs * 5 + (sub.overtime ? 7 : 0) + lh + dt.getHours();
+  const pool = (dt.getHours() >= 5 && dt.getHours() < 10) ? BREAKFAST_POOL
+    : (rel === "用克体" ? MILD_POOL
+    : (ORDER_POOL[wx] || ORDER_POOL["土"]));
+  return pool[((seed % pool.length) + pool.length) % pool.length];
+}
+const ZHI = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+const GAN = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"];
+
+/* ============================================================
+   二、起卦（与 Python 同式）
+   ============================================================ */
+function shiOf(h){ return ((h + 1) >> 1) % 12 + 1; }   /* 子1 丑2 … 亥12 */
+
+/* 先天数 → 六爻：(数-1) 的三位二进制 B2B1B0，B2 对应初爻、B0 对应上爻，爻象与位取值相反 */
+function linesOf(up, down){
+  const out = [];
+  for (let i = 0; i < 3; i++) out.push(1 - (((down - 1) >> (2 - i)) & 1));
+  for (let i = 0; i < 3; i++) out.push(1 - (((up - 1) >> (2 - i)) & 1));
+  return out;
+}
+function trigramOf(l3){
+  let bits = 0;
+  for (let i = 0; i < 3; i++) bits |= (1 - l3[i]) << (2 - i);
+  return bits + 1;
+}
+function hexHTML(lines, dong){
+  let h = "";
+  for (let i = 5; i >= 0; i--){
+    const yang = lines[i] === 1;
+    h += '<i class="yao ' + (yang ? "yang" : "yin") + (dong === i + 1 ? " dong" : "") + '"></i>';
+  }
+  return h;
+}
+
+function guaLabel(up, down){
+  if (up === down) return GUA64[up + "," + down][0];
+  return TRIGRAM[up][0] + "上" + TRIGRAM[down][0];
+}
+
+function meihua(dt){
+  const y = dt.getFullYear(), mo = dt.getMonth() + 1, d = dt.getDate(), h = dt.getHours();
+  const sum3 = y + mo + d;
+  const shi = shiOf(h);
+  const sum4 = sum3 + shi;
+  const up = (sum3 % 8) || 8;
+  const down = (sum4 % 8) || 8;
+  const dong = (sum4 % 6) || 6;
+
+  const ben = GUA64[up + "," + down];
+  const ls = linesOf(up, down);
+  const bl = ls.slice();
+  bl[dong - 1] = 1 - bl[dong - 1];
+  const down2 = trigramOf(bl.slice(0, 3));
+  const up2 = trigramOf(bl.slice(3, 6));
+  const bian = GUA64[up2 + "," + down2];
+
+  const huDown = trigramOf([ls[1], ls[2], ls[3]]);
+  const huUp = trigramOf([ls[2], ls[3], ls[4]]);
+  const hu = GUA64[huUp + "," + huDown];
+
+  return {
+    y: y, mo: mo, d: d, h: h, shi: shi, sum3: sum3, sum4: sum4,
+    up: up, down: down, up2: up2, down2: down2, huUp: huUp, huDown: huDown, dong: dong,
+    benName: ben[0], benVerdict: ben[1], benGua: guaLabel(up, down),
+    bianName: bian[0], bianVerdict: bian[1], bianGua: guaLabel(up2, down2),
+    huName: hu[0], huVerdict: hu[1], huGua: guaLabel(huUp, huDown),
+    benLines: ls, bianLines: bl, huLines: linesOf(huUp, huDown)
+  };
+}
+
+function tiyong(m){
+  const yongIsUpper = m.dong > 3;
+  const tiNum = yongIsUpper ? m.down : m.up;
+  const yongNum = yongIsUpper ? m.up : m.down;
+  const tiEl = TRIGRAM[tiNum][1], yongEl = TRIGRAM[yongNum][1];
+  let rel, verdict, luck;
+  if (tiEl === yongEl){
+    rel = "比和"; verdict = "你俩一个调门，点什么都不会错，也别贪多。"; luck = 72;
+  } else if (SHENG[yongEl] === tiEl){
+    rel = "用生体"; verdict = "这顿麦是来帮你的，点份好的，别客气。"; luck = 84;
+  } else if (SHENG[tiEl] === yongEl){
+    rel = "体生用"; verdict = "你会为这顿多费点力气，点小份就够。"; luck = 58;
+  } else if (KE[tiEl] === yongEl){
+    rel = "体克用"; verdict = "你压得住场面，多点一份也不慌。"; luck = 70;
+  } else {
+    rel = "用克体"; verdict = "这顿有点压你，清淡为主，别加辣。"; luck = 44;
+  }
+  return {
+    tiName: TRIGRAM[tiNum][0], tiEl: tiEl,
+    yongName: TRIGRAM[yongNum][0], yongEl: yongEl,
+    yongIsUpper: yongIsUpper, rel: rel, verdict: verdict, luck: luck
+  };
+}
+
+/* ============================================================
+   三、宜忌 · 命卡 · 麦气（与 Python 同式）
+   ============================================================ */
+function parseVerdict(v){
+  const yi = [], ji = [];
+  v.split("，").forEach(function(p){
+    if (p.charAt(0) === "宜") yi.push(p.slice(1));
+    else if (p.charAt(0) === "忌") ji.push(p.slice(1));
+  });
+  return {yi: yi, ji: ji};
+}
+function buildYiji(m, ty, sub, wx, dt){
+  const b = parseVerdict(m.benVerdict), n = parseVerdict(m.bianVerdict);
+  let yi = b.yi.slice(0, 1);
+  let ji = b.ji.slice(0, 1);
+  n.yi.slice(0, 1).forEach(function(x){ if (yi.indexOf(x) < 0) yi.push(x); });
+  n.ji.slice(0, 1).forEach(function(x){ if (ji.indexOf(x) < 0) ji.push(x); });
+
+  if (ty.rel === "用生体"){
+    yi.push("拉个人一起点，今天有人替你分担", "点份带肉的，别只喝饮料");
+  } else if (ty.rel === "用克体"){
+    ji.push("硬着头皮点最辣的", "在店里跟人抢座位");
+  } else if (ty.rel === "体生用"){
+    ji.push("加钱加大，今天吃不完");
+  } else if (ty.rel === "体克用"){
+    yi.push("多点一份，今天你压得住");
+  }
+
+  if (sub.commits >= 15) yi.push("加个小食，今天提交了 " + sub.commits + " 次");
+  if (sub.bugs > 0) ji.push("带着没改完的错去吃饭");
+  if (sub.overtime){
+    ji.push("加班到店里都快打烊");
+    yi.push("用麦乐送，别硬撑到店");
+  }
+
+  let order = orderOf(wx, ty.rel, sub, dt);
+  yi.push("点一份" + order);
+  yi.push("拉个人拼 1+1 随心配，比单点划算");
+  if (sub.bugs >= 3) yi.push("来份麦旋风压压惊，别跟自己较劲");
+  if (ji.length < 2) ji.push("点完就走，空着手出门");
+  if (ji.length < 3) ji.push("边吃边改代码，油手打键盘");
+
+  function uniq(seq){
+    const out = [];
+    seq.forEach(function(x){ if (x && out.indexOf(x) < 0) out.push(x); });
+    return out.slice(0, 6);
+  }
+  return {yi: uniq(yi), ji: uniq(ji), order: order};
+}
+function cardIndexOf(sub, dt){
+  const seed = sub.commits * 7 + sub.bugs * 13 + (sub.overtime ? 5 : 0)
+             + dt.getFullYear() * 10000 + (dt.getMonth() + 1) * 100 + dt.getDate() * 10 + dt.getHours();
+  return ((seed % MING_CARDS.length) + MING_CARDS.length) % MING_CARDS.length;
+}
+function calcScore(sub, ty){
+  let base = 60 + Math.min(sub.commits, 20) - sub.bugs * 4 - (sub.overtime ? 8 : 0);
+  base = Math.max(30, Math.min(96, base));
+  const s = Math.round(base * 0.6 + ty.luck * 0.4);
+  return Math.max(30, Math.min(96, s));
+}
+function maiVerdict(score, ty, sub){
+  const grades = [
+    [82, "上吉", "今天麦气很足，点什么都不会错"],
+    [72, "中吉", "今天挺顺，按老规矩点就行"],
+    [62, "小吉", "今天不差，稳着来"],
+    [50, "平常", "今天不功不过，吃饱最要紧"],
+    [0,  "缓一缓", "今天差点意思，清淡为主"]
+  ];
+  let grade = "平常", headline = "今天一般";
+  for (let i = 0; i < grades.length; i++){
+    if (score >= grades[i][0]){ grade = grades[i][1]; headline = grades[i][2]; break; }
+  }
+  let tip;
+  if (sub.overtime) tip = "活是干不完的，先吃饭";
+  else if (sub.bugs >= 3) tip = "错已经出了，别拿饭赌气";
+  else if (sub.bugs > 0) tip = "小错先记着，吃完再改";
+  else if (sub.commits >= 15) tip = "今天干得够多，加个甜的犒劳下";
+  else tip = "别在工位上凑合，站起来去吃";
+  return {grade: grade, headline: headline, oneLine: ty.verdict, tip: tip};
+}
+
+/* ══════════════════════════════════════════════════════════════
+   五、结果维度（三端同口径，Python 引擎为真源）
+   ══════════════════════════════════════════════════════════════ */
+const GUA_TAGS = {
+  "1,1": ["开足马力", "一次做完", "别嘴硬"],
+  "8,8": ["稳住", "吃饱", "别硬撑"],
+  "6,4": ["开局卡", "先垫一口", "别空肚改需求"],
+  "7,6": ["没开机", "先问清", "别瞎猜"],
+  "6,1": ["再等等", "先来口甜的", "别催上线"],
+  "1,6": ["易抬杠", "退半步", "别对线"],
+  "8,6": ["人多事杂", "分好工", "别一锅炖"],
+  "6,8": ["人缘好", "拉个伴", "别闷头吃"],
+  "5,1": ["攒着", "小份就够", "别点太多"],
+  "1,2": ["踩线", "小心提交", "别手抖"],
+  "8,1": ["顺", "按计划", "别加戏"],
+  "1,8": ["气堵", "先搁着", "别硬推"],
+  "1,3": ["合得来", "结对子", "别各改各的"],
+  "3,1": ["手气旺", "点份好的", "别吃独食"],
+  "8,7": ["低调", "闷声吃", "别炫加班"],
+  "4,8": ["心情好", "慢慢吃", "别边吃边改"],
+  "2,4": ["跟着走", "听安排", "别另开摊"],
+  "7,5": ["清旧账", "先收摊子", "别堆需求"],
+  "8,2": ["靠近点", "当面聊", "别打太极"],
+  "5,8": ["先看戏", "摸清底", "别抢表态"],
+  "3,4": ["硬骨头", "先啃难的", "别拖到下班"],
+  "7,3": ["好包装", "弄漂亮点", "别只剩壳"],
+  "7,8": ["漏气", "收着点", "别大改"],
+  "8,4": ["回血", "早睡", "别熬夜"],
+  "1,4": ["别乱来", "守规矩", "别动别人代码"],
+  "7,1": ["蓄力", "攒着待发", "别 all in"],
+  "7,4": ["该补了", "正经吃一顿", "别拿咖啡当饭"],
+  "2,5": ["过头", "适可而止", "别点三份"],
+  "6,6": ["坑多", "稳着走", "别硬闯"],
+  "3,3": ["在线", "多输出", "别光说"],
+  "2,7": ["来电", "真诚点", "别端架子"],
+  "4,5": ["长跑", "按节奏", "别三天打鱼"],
+  "1,7": ["该撤", "早点走", "别死磕"],
+  "4,1": ["气势足", "趁热打铁", "别用力过猛"],
+  "3,8": ["上升", "主动争取", "别等着被发现"],
+  "8,3": ["藏锋芒", "养着", "别抢风头"],
+  "5,3": ["收拾", "整工位", "别管闲事"],
+  "3,2": ["拧巴", "求同存异", "别争对错"],
+  "6,7": ["路难走", "绕一绕", "别硬顶"],
+  "4,6": ["解结", "办掉拖着的事", "别继续攒"],
+  "7,2": ["做减法", "让一点", "别什么都想要"],
+  "5,4": ["有进益", "帮人一把", "别独占"],
+  "2,1": ["该断", "砍需求", "别犹豫"],
+  "1,5": ["易撞上", "留心眼", "别什么局都去"],
+  "2,8": ["人聚齐", "组个饭局", "别各吃各的"],
+  "8,5": ["慢慢上", "一步一格", "别想一步登天"],
+  "2,6": ["困住", "歇口气", "别硬求"],
+  "6,5": ["不枯", "复盘沉淀", "别原地打转"],
+  "2,3": ["该换", "推倒重来", "别修补"],
+  "3,5": ["上新", "换新方案", "别将就"],
+  "4,4": ["动静大", "开个新坑", "别犹豫"],
+  "7,7": ["该停", "收工走人", "别再改一版"],
+  "5,7": ["慢慢来", "按部就班", "别跳步骤"],
+  "4,2": ["别急定", "先问清楚", "别仓促答应"],
+  "4,3": ["正当其时", "干票大的", "别过头"],
+  "3,7": ["在外跑", "就近吃", "别跑太远"],
+  "5,5": ["润物无声", "小步推进", "别硬刚"],
+  "2,2": ["和气", "好好说话", "别嘴上不饶人"],
+  "5,6": ["该散", "解开结", "别憋着"],
+  "6,2": ["有节制", "量力点单", "别报复性消费"],
+  "5,2": ["讲信用", "说到做到", "别画饼"],
+  "4,7": ["小事可为", "小改小动", "别大动干戈"],
+  "6,3": ["已成", "收尾查一遍", "别松劲"],
+  "3,6": ["差一点", "善始善终", "别最后翻车"]
+};
+
+const TRIGRAM_XIANG = {
+  1: ["天", "刚健、往上顶、爱硬碰"],
+  2: ["泽", "喜悦、会说话、好交朋友"],
+  3: ["火", "明亮、显眼、烧得快"],
+  4: ["雷", "动、突然、说来就来"],
+  5: ["风", "渗透、顺着走、无孔不入"],
+  6: ["水", "险、绕、藏得深"],
+  7: ["山", "停、稳、过不去就歇着"],
+  8: ["地", "承载、厚、什么都接得住"]
+};
+
+const LUCKY_MAP = {
+  "金": {
+    "color": "白 / 银",
+    "num": "4 和 9",
+    "dir": "西边",
+    "hour": "15–19 点",
+    "item": "薯条"
+  },
+  "木": {
+    "color": "青 / 绿",
+    "num": "3 和 8",
+    "dir": "东边",
+    "hour": "7–11 点",
+    "item": "板烧鸡腿堡"
+  },
+  "水": {
+    "color": "黑 / 蓝",
+    "num": "1 和 6",
+    "dir": "北边",
+    "hour": "21–1 点",
+    "item": "麦旋风"
+  },
+  "火": {
+    "color": "红 / 橙",
+    "num": "2 和 7",
+    "dir": "南边",
+    "hour": "11–15 点",
+    "item": "麦辣鸡腿堡"
+  },
+  "土": {
+    "color": "黄 / 棕",
+    "num": "5 和 10",
+    "dir": "中间（就工位）",
+    "hour": "13–17 点",
+    "item": "巨无霸"
+  }
+};
+
+const YAO_POS = {
+  "1": [
+    "刚起步",
+    "今天才开头"
+  ],
+  "2": [
+    "在自己那摊",
+    "手上的活最要紧"
+  ],
+  "3": [
+    "进退两难",
+    "跨出去回不来，卡在中间"
+  ],
+  "4": [
+    "到了门外",
+    "事到临头，得问一句"
+  ],
+  "5": [
+    "坐在主位",
+    "今天你能拍板"
+  ],
+  "6": [
+    "走到头了",
+    "这一程该收了"
+  ]
+};
+
+function tagsOf(up, down){
+  return GUA_TAGS[up + "," + down] || ["照常", "别折腾", "稳着来"];
+}
+function luckyOf(wx){
+  return LUCKY_MAP[wx] || LUCKY_MAP["土"];
+}
+function yaoHint(m){
+  var pos = m.dong, line = m.benLines[pos - 1];
+  var st = YAO_POS[String(pos)];
+  return {
+    pos: pos, stage: st[0], stage_desc: st[1],
+    yin_yang: line === 1 ? "阳" : "阴",
+    text: line === 1 ? "阳爻动，宜主动出击，该说就说" : "阴爻动，宜先守着，别抢出头"
+  };
+}
+function profileOf(m){
+  var yongUp = m.dong > 3;
+  var tiN = yongUp ? m.down : m.up;
+  var yoN = yongUp ? m.up : m.down;
+  return {
+    ti:   { xiang: TRIGRAM_XIANG[tiN][0], nature: TRIGRAM_XIANG[tiN][1] },
+    yong: { xiang: TRIGRAM_XIANG[yoN][0], nature: TRIGRAM_XIANG[yoN][1] }
+  };
+}
+function threeThings(yiji, ty, sub){
+  var dox = (yiji.yi && yiji.yi[0]) || "照常点一份";
+  var dont = (yiji.ji && yiji.ji[0]) || "别折腾";
+  var note;
+  if (sub.overtime) note = "加班了就点外卖，别硬撑到店里";
+  else if (sub.bugs >= 3) note = "今天错出得多，先吃饭再修";
+  else if (ty.rel === "用克体") note = "这顿有点压你，清淡为主";
+  else if (ty.rel === "用生体") note = "今天有人帮你，别一个人扛";
+  else note = "吃完再说，工作和饭都凉不得";
+  return { do: dox, dont: dont, note: note };
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   UI 层：单页应用 + 底部切页，首屏只留结论
+   ══════════════════════════════════════════════════════════════ */
+const $ = function(id){ return document.getElementById(id); };
+function setText(id, v){ const el = $(id); if (el) el.textContent = v; }
+function pad2(n){ return ("0" + n).slice(-2); }
+function dateStr(dt){ return dt.getFullYear() + "-" + pad2(dt.getMonth() + 1) + "-" + pad2(dt.getDate()); }
+const WEEK = ["日","一","二","三","四","五","六"];
+
+let NOW = new Date();
+let M = null, TY = null;
+let REAL = (typeof window.MCD_REAL === "object" && window.MCD_REAL) ? window.MCD_REAL : null;
+
+/* ── Tab 切换 ── */
+function goView(v){
+  const views = document.querySelectorAll(".view");
+  for (let i = 0; i < views.length; i++) views[i].classList.toggle("on", views[i].id === "v-" + v);
+  const tabs = document.querySelectorAll(".tab");
+  for (let j = 0; j < tabs.length; j++) tabs[j].classList.toggle("on", tabs[j].getAttribute("data-v") === v);
+  window.scrollTo(0, 0);
+}
+function initTabs(){
+  const tabs = document.querySelectorAll(".tab");
+  for (let i = 0; i < tabs.length; i++){
+    tabs[i].addEventListener("click", function(){ goView(this.getAttribute("data-v")); });
+  }
+  const link = $("srcLine");
+  if (link) link.addEventListener("click", function(){ goView("store"); });
+}
+
+/* ── 真实数据辅助 ── */
+function realOk(){ return !!(REAL && REAL.ok); }
+function fmtDist(d){
+  if (typeof d !== "number") return "附近";
+  return d < 1000 ? d + "<small>米</small>" : (d / 1000).toFixed(1) + "<small>公里</small>";
+}
+function nearest(){
+  const ss = (REAL && REAL.stores) || [];
+  if (!ss.length) return null;
+  const copy = ss.slice().sort(function(a, b){
+    return (a.distance == null ? 1e9 : a.distance) - (b.distance == null ? 1e9 : b.distance);
+  });
+  return copy[0];
+}
+function matchCoupon(wish){
+  const cs = (REAL && REAL.coupons) || [];
+  if (!cs.length) return null;
+  const keys = (wish || "").split(/[配和或/、]/).filter(function(k){ return k.length >= 2; });
+  for (let i = 0; i < keys.length; i++){
+    for (let j = 0; j < cs.length; j++){
+      if (cs[j].title.indexOf(keys[i]) >= 0) return cs[j];
+    }
+  }
+  return null;
+}
+function todayCamp(){
+  const cs = (REAL && REAL.campaigns) || [];
+  for (let i = 0; i < cs.length; i++) if ((cs[i].tag || "").indexOf("今日") >= 0) return cs[i];
+  return cs[0] || null;
+}
+
+/* ── 渲染：今日 ── */
+function renderToday(){
+  const d = NOW;
+  setText("tbDate", (d.getMonth() + 1) + "月" + d.getDate() + "日 周" + WEEK[d.getDay()]);
+  setText("tbShi", ZHI[M.shi - 1] + "时");
+
+  const lb = subLabel(SUB);
+  $("subjLine").innerHTML = lb
+    ? "按 <b>" + lb + "</b> 算的 · 改外应"
+    : "只按此刻起卦 · 加外应更准";
+
+  const tags = tagsOf(M.up, M.down);
+  $("tags").innerHTML = tags.map(function(t){ return '<span class="tag">' + t + "</span>"; }).join("");
+
+  setText("scoreNum", String(SCORE));
+  setText("scoreGrade", MV.grade);
+  setText("scoreLine", MV.headline);
+
+  /* 点单：五行池轮换（外应一变就换）+ 真实券/门店/活动 */
+  const wish = YIJI.order || orderOf(WX, TY.rel, SUB, NOW);
+  const cp = matchCoupon(wish);
+  /* 主文只放商品名，太长的话人一眼抓不住 */
+  setText("orderMain", wish);
+
+  let real = [];
+  if (cp){
+    real.push("有券：<b>" + cp.title + "</b>" + (cp.status && cp.status.indexOf("可领") < 0 ? " · " + cp.status : ""));
+  } else if (realOk() && (REAL.coupons || []).length){
+    real.push("今天有 " + REAL.coupons.length + " 张券可领");
+  }
+  const st = nearest();
+  if (st && typeof st.distance === "number"){
+    /* 距离与单位之间用不换行空格：390 宽下「173 米」会被折出孤字「米」 */
+    real.push("最近那家 <b style=\"white-space:nowrap\">" + (st.distance < 1000 ? st.distance + "\u00A0米" : (st.distance / 1000).toFixed(1) + "\u00A0公里") + "</b>");
+  }
+  $("orderReal").innerHTML = real.join(" · ");
+
+  const why = [];
+  const hr = NOW.getHours();
+  if (hr >= 5 && hr < 10) why.push("早餐时段，先来份" + wish);
+  else if (TY.rel === "用克体") why.push("这顿压你，吃清淡点：" + wish);
+  else why.push(WX + "气当值，该点" + wish);
+  if (cp) why.push("刚好有券");
+  const cmp = todayCamp();
+  if (cmp){
+    let ct = (cmp.title || "").trim();
+    if (ct.length > 10) ct = ct.slice(0, 10) + "…";
+    why.push("「" + ct + "」在进行");
+  }
+  setText("orderWhy", why.join("，") + "。");
+
+  /* 三件事 */
+  const realYiji = realOk() ? buildRealYiji(wish) : null;
+  const yi = (realYiji && realYiji.yi.length) ? realYiji.yi : YIJI.yi;
+  const ji = (realYiji && realYiji.ji.length) ? realYiji.ji : YIJI.ji;
+  setText("tDo", yi[0] || "照常点一份");
+  setText("tDont", ji[0] || "别折腾");
+
+  /* 数据来源说明 */
+  if (realOk()){
+    $("srcLine").innerHTML = (REAL.demo ? "示例数据" : "麦当劳数据")
+      + (REAL.city ? "（" + REAL.city + "）" : "")
+      + " · 抓取于 " + (REAL.fetched_at || "").slice(5, 16);
+  } else {
+    $("srcLine").innerHTML = "这会儿没读到数据 · 卦照常算";
+  }
+}
+
+/* 真实宜忌（与 mcp_client.build_yiji 同口径，浏览器侧实现） */
+function buildRealYiji(wish){
+  if (!REAL || !REAL.ok) return null;
+  const yi = [], ji = [];
+  const st = nearest();
+  const cp = matchCoupon(wish);
+  const cmp = todayCamp();
+  if (st && typeof st.distance === "number"){
+    const ds = st.distance < 1000 ? st.distance + "\u00A0米" : (st.distance / 1000).toFixed(1) + "\u00A0公里";
+    yi.push("去 " + ds + " 那家，走过去不费劲");
+  }
+  if (cp) yi.push("领「" + cp.title + "」，今天有便宜占");
+  if (cmp) yi.push("看一眼「" + cmp.title.slice(0, 12) + "」");
+  if (REAL.points && REAL.points.available) yi.push("卡里还有 " + REAL.points.available + " 积分");
+  else if (REAL.points && REAL.points.accumulative) yi.push("累计攒了 " + REAL.points.accumulative + " 积分，接着攒");
+  ji.push("空着手出门");
+  if (st && st.close) ji.push("别等过了 " + st.close + " 再去");
+  return { yi: yi, ji: ji };
+}
+
+/* ── 渲染：卦象 ── */
+function renderGua(){
+  $("hexMain").innerHTML = hexHTML(M.benLines, M.dong);
+  setText("guaWise", (M.benGua === M.benName ? "纯卦" : M.benGua) + " · " + ZHI[M.shi - 1] + "时起");
+  setText("guaName", M.benName);
+  setText("guaTag", tagsOf(M.up, M.down).join(" · "));
+  setText("guaSay", M.benVerdict);
+
+  /* 动爻 */
+  const yh = YAO_HINT;
+  $("yaoPos").innerHTML = "第 <em>" + ["一","二","三","四","五","六"][yh.pos - 1] + "</em> 爻动（" + yh.yin_yang + "）";
+  setText("yaoStage", yh.stage + " · " + yh.stage_desc);
+  setText("yaoText", yh.text);
+  setText("yaoNote", "还有一句：" + THREE.note);
+
+  /* 三卦 */
+  const rows = [
+    ["今日主卦", M.benName, M.benGua, M.benVerdict, M.benLines, M.dong, true],
+    ["过程", M.huName, M.huGua, M.huVerdict, M.huLines, 0, false],
+    ["收尾", M.bianName, M.bianGua, M.bianVerdict, M.bianLines, 0, false]
+  ];
+  $("tris").innerHTML = rows.map(function(r){
+    return '<div class="tri' + (r[6] ? " now" : "") + '">' +
+      '<div class="hex">' + hexHTML(r[4], r[5]) + "</div>" +
+      '<div class="tri-b">' +
+        '<div class="tri-k">' + r[0] + "</div>" +
+        '<div class="tri-n">' + r[1] + "</div>" +
+        '<div class="tri-g">' + (r[2] === r[1] ? "纯卦" : r[2]) + "</div>" +
+        '<div class="tri-d">' + r[3] + "</div>" +
+      "</div></div>";
+  }).join("");
+
+  /* 体用 */
+  const pf = PROFILE;
+  $("tyBox").innerHTML =
+    '<div><small>你这边</small><b>' + TY.tiName + "</b><p>" + pf.ti.xiang + " · " + pf.ti.nature + "</p></div>" +
+    '<div><small>这顿麦</small><b>' + TY.yongName + "</b><p>" + pf.yong.xiang + " · " + pf.yong.nature + "</p></div>" +
+    '<div class="full"><b>' + TY.rel + "</b><p>" + TY.verdict + "</p></div>";
+
+  /* 幸运物 */
+  const lk = LUCKY;
+  $("lucky").innerHTML = [
+    ["幸运色", lk.color], ["幸运数字", lk.num],
+    ["好方位", lk.dir], ["好时段", lk.hour]
+  ].map(function(x){ return '<div class="lk"><i>' + x[0] + "</i><b>" + x[1] + "</b></div>"; }).join("");
+
+  /* 来由 */
+  $("qiTable").innerHTML =
+    "<tr><td>起卦时辰</td><td>" + M.y + " 年 " + M.mo + " 月 " + M.d + " 日 " + ZHI[M.shi - 1] + "时</td></tr>" +
+    "<tr><td>上卦</td><td>" + (M.sum3 % 8 || 8) + " → " + TRIGRAM[M.up][0] + "（" + TRIGRAM[M.up][1] + "）</td></tr>" +
+    "<tr><td>下卦</td><td>" + (M.sum4 % 8 || 8) + " → " + TRIGRAM[M.down][0] + "（" + TRIGRAM[M.down][1] + "）</td></tr>" +
+    "<tr><td>动爻</td><td>" + M.sum4 + " ÷ 6 余 " + (M.sum4 % 6 || 6) + " → 第 " + M.dong + " 爻</td></tr>" +
+    "<tr><td>本卦</td><td>" + M.benName + "</td></tr>" +
+    "<tr><td>互卦</td><td>" + M.huName + "</td></tr>" +
+    "<tr><td>变卦</td><td>" + M.bianName + "</td></tr>";
+}
+
+/* ── 渲染：门店 ── */
+function renderStore(){
+  const box = $("storeBox");
+  if (!realOk()){
+    box.innerHTML = '<div class="empty">这会儿读不到门店数据。<br>' +
+      '卦和命卡照常，今天吃啥照样算。</div>';
+    $("couponList").innerHTML = '<div class="empty">暂时没有券</div>';
+    $("campList").innerHTML = '<div class="empty">暂时没有活动</div>';
+    $("pointBox").innerHTML = '<div><small>积分</small><b>—</b></div><div><small>累计</small><b>—</b></div>';
+    $("storeFoot").textContent = "数据暂时读不到，过会儿再看";
+    return;
+  }
+
+  const st = nearest();
+  const ss = REAL.stores || [];
+  /* 说清楚这是哪座城市的快照：别让人以为是自己楼下 */
+  $("storeSrc").textContent = "附近门店 · " + (REAL.city || "示例")
+    + "（" + (REAL.keyword || "地标") + "一带的抓取快照）";
+  let html = "";
+  if (st){
+    html += '<div class="store-hero">' +
+      '<div class="sh-dist">' + fmtDist(st.distance) + "</div>" +
+      '<div class="sh-name">' + (st.name || "").replace("麦当劳", "").replace("餐厅", "") + "</div>" +
+      '<div class="sh-meta">' + (st.address || "") + "</div>" +
+      '<div class="sh-tags">' +
+        "<span>" + (st.open || "—") + "–" + (st.close || "—") + "</span>" +
+        (st.open_now ? "<span>现在开着</span>" : "<span>已打烊</span>") +
+        (st.reservation ? "<span>可预约</span>" : "") +
+      "</div></div>";
+  }
+  if (ss.length > 1){
+    html += '<div class="list">' + ss.slice(1).map(function(s){
+      return '<div class="li"><div class="li-n">' +
+        '<div class="li-t">' + (s.name || "").replace("麦当劳", "") + "</div>" +
+        '<div class="li-s">' + (s.address || "") + "</div></div>" +
+        '<div class="li-d">' + (typeof s.distance === "number" ? (s.distance < 1000 ? s.distance + "\u00A0米" : (s.distance / 1000).toFixed(1) + "\u00A0公里") : "—") + "</div></div>";
+    }).join("") + "</div>";
+  }
+  box.innerHTML = html || '<div class="empty">附近没搜到门店</div>';
+
+  const cps = REAL.coupons || [];
+  $("couponList").innerHTML = cps.length ? cps.map(function(c){
+    return '<div class="cp"><div class="cp-t">' + c.title + "</div>" +
+      '<div class="cp-s">' + (c.status || "可领") + "</div></div>";
+  }).join("") : '<div class="empty">这会儿没有可领的券</div>';
+
+  const cms = REAL.campaigns || [];
+  $("campList").innerHTML = cms.length ? cms.map(function(c){
+    const today = (c.tag || "").indexOf("今日") >= 0;
+    return '<div class="camp"><div class="camp-t">' + c.title + "</div>" +
+      '<div class="camp-d">' + (c.date || "") + (c.tag ? " · <em>" + c.tag + "</em>" : "") + "</div></div>";
+  }).join("") : '<div class="empty">暂无活动</div>';
+
+  const pt = REAL.points || {};
+  const masked = pt.available == null && pt.accumulative == null;
+  $("pointBox").innerHTML = masked
+    ? '<div class="full"><b>这里不显示个人积分</b><p>用的是公开数据，不碰你的账号。想看自己的，在 WorkBuddy 里用技能版。</p></div>'
+    : "<div><small>可用积分</small><b>" + (pt.available != null ? pt.available : "—") + "</b></div>" +
+      "<div><small>累计积分</small><b>" + (pt.accumulative != null ? pt.accumulative : "—") + "</b></div>";
+
+  const when = (REAL.fetched_at || "").slice(0, 16);
+  $("storeFoot").textContent = "数据抓取于 " + when + " · 价格与库存以门店为准";
+}
+
+/* ── 命卡弹层 ── */
+function openCard(){
+  const card = MING_CARDS[cardIndexOf(currentSub(), NOW)];
+  $("cfHex").innerHTML = hexHTML(M.benLines, 0);
+  setText("cfName", M.benName);
+  setText("cfStar", card[0] + " · " + card[1]);
+  setText("cfBless", card[2]);
+  $("sheet").classList.add("on");
+}
+
+/* ── 起卦（仪式：六爻自下而上显现） ── */
+let asking = false;
+function ask(quiet){
+  if (asking) return;
+  asking = true;
+  NOW = new Date();
+  M = meihua(NOW);
+  TY = tiyong(M);
+
+  const lines = M.benLines;
+  let rh = "";
+  for (let i = 5; i >= 0; i--) rh += '<i class="yao ' + (lines[i] === 1 ? "yang" : "yin") + '"></i>';
+  $("rh").innerHTML = rh;
+  $("ritual").classList.add("on");
+
+  const yaoEls = document.querySelectorAll("#rh .yao");
+  for (let k = 0; k < yaoEls.length; k++){
+    /* 自下而上：DOM 里第 0 个是最上爻，所以要倒着点亮 */
+    (function(el, delay){ setTimeout(function(){ el.classList.add("on"); }, delay); })(yaoEls[yaoEls.length - 1 - k], 160 + k * 150);
+  }
+  setText("ritualT", "起 卦");
+
+  const total = 160 + 6 * 150 + 420;
+  setTimeout(function(){
+    $("ritual").classList.remove("on");
+    compute();
+    renderToday();
+    renderGua();
+    renderStore();
+    asking = false;
+    if (!quiet && navigator.vibrate) { try{ navigator.vibrate([8, 40, 12]); }catch(e){} }
+  }, total);
+}
+
+/* ── 计算派生值 ── */
+let SUB, WX, SCORE, MV, YIJI, THREE, YAO_HINT, LUCKY, PROFILE;
+function currentSub(){
+  return {
+    lang: $("langSel") ? $("langSel").value : "python",
+    commits: $("inCommits") ? (parseInt($("inCommits").value, 10) || 0) : 0,
+    bugs: $("inBugs") ? (parseInt($("inBugs").value, 10) || 0) : 0,
+    overtime: $("swOt") ? $("swOt").classList.contains("on") : false
+  };
+}
+function compute(){
+  SUB = currentSub();
+  WX = (LANG_WUXING[SUB.lang] || ["土"])[0];
+  TY = tiyong(M);
+  SCORE = calcScore(SUB, TY);
+  MV = maiVerdict(SCORE, TY, SUB);
+  YIJI = buildYiji(M, TY, SUB, WX, NOW);
+  THREE = threeThings(YIJI, TY, SUB);
+  YAO_HINT = yaoHint(M);
+  LUCKY = luckyOf(WX);
+  PROFILE = profileOf(M);
+}
+
+/* ── 外应：把「这次按什么算的」说清楚 ── */
+function subParts(sub){
+  const parts = [];
+  if (sub.lang && sub.lang !== "python") parts.push(sub.lang);
+  if (sub.commits > 0) parts.push(sub.commits + " 次提交");
+  if (sub.bugs > 0) parts.push(sub.bugs + " 个错");
+  if (sub.overtime) parts.push("加班");
+  return parts;
+}
+function subLabel(sub){
+  const parts = subParts(sub);
+  return parts.length ? parts.join(" · ") : "";
+}
+
+/* ── 外应表单 ── */
+function initForm(){
+  const langs = Object.keys(LANG_WUXING).filter(function(k){ return k !== "js"; });
+  $("langSel").innerHTML = langs.map(function(k){
+    return '<option value="' + k + '">' + k + "</option>";
+  }).join("");
+  $("langSel").value = "python";
+
+  const swallow = $("swOt");
+  function toggle(){
+    swallow.classList.toggle("on");
+    swallow.setAttribute("aria-checked", swallow.classList.contains("on") ? "true" : "false");
+  }
+  swallow.addEventListener("click", toggle);
+  swallow.addEventListener("keydown", function(e){ if (e.key === " " || e.key === "Enter"){ e.preventDefault(); toggle(); } });
+
+  /* 改了就重算：静默重排，不重放起卦仪式 —— 否则用户会以为「选了没反应」 */
+  let deb = null;
+  function applySoon(announce){
+    clearTimeout(deb);
+    deb = setTimeout(function(){
+      compute();
+      renderToday();
+      renderGua();
+      renderStore();
+      const lb = subLabel(SUB);
+      if (announce) toast(lb ? "已按 " + lb + " 重算" : "已回到只按此刻起卦", 1600);
+    }, 260);
+  }
+  $("langSel").addEventListener("change", function(){ applySoon(true); });
+  $("inCommits").addEventListener("input", function(){ applySoon(false); });
+  $("inBugs").addEventListener("input", function(){ applySoon(false); });
+  $("inCommits").addEventListener("change", function(){ applySoon(true); });
+  $("inBugs").addEventListener("change", function(){ applySoon(true); });
+  swallow.addEventListener("click", function(){ applySoon(true); });
+
+  $("subjLine").addEventListener("click", function(){ goView("me"); });
+
+  $("btnRecalc").addEventListener("click", function(){
+    START_NOW = null;
+    ask();
+    goView("today");
+  });
+}
+
+/* ── 导出 ── */
+function safeName(){ return "今日麦占-" + dateStr(NOW); }
+function triggerDownload(href, filename, revoke){
+  const a = document.createElement("a");
+  a.href = href; a.download = filename; a.style.display = "none";
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){
+    a.remove();
+    if (revoke && href.indexOf("blob:") === 0){ try{ URL.revokeObjectURL(href); }catch(e){} }
+  }, 2000);
+}
+function savePage(){
+  try{
+    const doc = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    triggerDownload(URL.createObjectURL(new Blob([doc], {type: "text/html;charset=utf-8"})), safeName() + ".html", true);
+    toast("已存成网页，双击就能打开");
+  }catch(e){ toast("没存上，用浏览器菜单里的「保存网页」吧"); }
+}
+const MAX_SIDE = 16000, MAX_AREA = 4.0e7;
+const IMG_CSS = [
+  ".topbar,.tabbar,.toast,.sheet,.ritual,.btn,.src,.fold,.vs,.vt{display:none!important}",
+  ".view{display:block!important;opacity:1!important;transform:none!important}",
+  "#v-gua,#v-store,#v-me{display:none!important}",
+  "html,body{background:#F5F0E8!important;padding:0!important;margin:0!important}",
+  "main{padding:0 20px!important}"
+].join("");
+function collectCss(){
+  const out = [], sts = document.querySelectorAll("style");
+  for (let i = 0; i < sts.length; i++) out.push(sts[i].textContent);
+  return out.join("\n").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+}
+function saveImage(){
+  toast("正在拼图，稍等一下…", 12000);
+  setTimeout(function(){
+    /* 只导出「今日」页，手机上一屏就看得完 */
+    const host = $("v-today").cloneNode(true);
+    const drops = host.querySelectorAll(".btn,.src");
+    for (let i = 0; i < drops.length; i++) drops[i].parentNode.removeChild(drops[i]);
+    host.classList.add("on");
+
+    const w = 420, h = Math.max(900, host.offsetHeight + 40);
+    const scale = Math.min(2, MAX_SIDE / Math.max(w, h), Math.sqrt(MAX_AREA / (w * h)));
+    const W = Math.round(w * scale), H = Math.round(h * scale);
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H +
+      '" viewBox="0 0 ' + w + " " + h + '">' +
+      '<foreignObject x="0" y="0" width="' + w + '" height="' + h + '">' +
+      '<div xmlns="http://www.w3.org/1999/xhtml" style="width:' + w + 'px;background:#F5F0E8;padding:26px 20px;box-sizing:border-box;font-family:' +
+      'Noto Sans SC,PingFang SC,sans-serif">' +
+      "<style>" + collectCss() + IMG_CSS + "</style>" + host.innerHTML +
+      "</div></foreignObject></svg>";
+
+    const img = new Image();
+    img.onload = function(){
+      const canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#F5F0E8";
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(img, 0, 0, W, H);
+      function fallback(){
+        try{
+          triggerDownload("data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg), safeName() + ".svg", false);
+          toast("这个浏览器不支持整页截图，改存成矢量图了");
+        }catch(e){ toast("图没存上，可以先存网页再打印成 PDF"); }
+      }
+      if (canvas.toBlob){
+        canvas.toBlob(function(blob){
+          if (!blob) return fallback();
+          triggerDownload(URL.createObjectURL(blob), safeName() + ".png", true);
+          toast("存好了，发群里正好");
+        }, "image/png");
+      } else { fallback(); }
+    };
+    img.onerror = function(){
+      try{
+        triggerDownload("data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg), safeName() + ".svg", false);
+        toast("改存成矢量图了");
+      }catch(e){ toast("图没存上"); }
+    };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }, 60);
+}
+
+/* ── Toast ── */
+let toastTimer = null;
+function toast(msg, ms){
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove("show"); }, ms || 2600);
+}
+
+/* ── 启动 ── */
+let START_NOW = new Date();
+(function boot(){
+  initTabs();
+  initForm();
+  $("btnCard").addEventListener("click", openCard);
+  $("sheetClose").addEventListener("click", function(){ $("sheet").classList.remove("on"); });
+  $("sheet").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("on"); });
+  $("btnSavePage").addEventListener("click", savePage);
+  $("btnSaveImg").addEventListener("click", saveImage);
+  $("btnAgain").addEventListener("click", function(){ ask(); });
+  ask(true);
+})();
+</script>
+</body>
+</html>
