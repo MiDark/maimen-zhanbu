@@ -1840,65 +1840,17 @@ function runLive(manual){
 var BOOT_LIVE = function(){ if ($("btnLive")) runLive(false); };
 /* LIVE-JS-END */
 
-/* ── 小工具 → 网页版（容器禁联网 / 禁外链 / 禁剪贴板，只留扫码与带地址两条路） ──
- * 这段留在小工具包里：元素在小工具专有区块中，网页版没有这些 id 时直接跳过。 */
+/* ── 小工具里的「实时数据怎么看」入口 ──
+ * 平台安全扫描不允许包内出现任何站外 URL（连二维码里编进去的也会被解出来判风险），
+ * 所以这里只做页内定位，不给地址、不放二维码。元素只在小工具包里存在，网页版自动跳过。 */
 function initWebBridge(){
-  const saveBtn = $("btnQrSave");
   const goBtn = $("btnGoWeb");
-  if (!saveBtn && !goBtn) return;
-
-  const hint = $("webHint");
-  function say(t){ if (hint) hint.textContent = t; }
-  function api(){ return (window.xhs && window.xhs.miniTool) || null; }
-
-  if (goBtn){
-    goBtn.addEventListener("click", function(){
-      goView("me");
-      const card = $("webBlock");
-      if (card && card.scrollIntoView) card.scrollIntoView({ block: "center" });
-    });
-  }
-
-  if (saveBtn){
-    const qr = $("qrImg");
-    saveBtn.addEventListener("click", function(){
-      const mt = api();
-      if (!mt || typeof mt.saveImageToPhotosAlbum !== "function"){
-        say("这个容器不能存图 —— 直接截图这张二维码，用另一台手机扫也能开。");
-        return;
-      }
-      saveBtn.disabled = true;
-      mt.saveImageToPhotosAlbum({ filePath: qr.src }).then(function(){
-        say("已存进相册。打开微信「扫一扫 → 相册」选它，就能到网页版。");
-      }, function(err){
-        say("没存成功（" + ((err && err.errMsg) || "未知原因") + "）—— 截图也能扫。");
-      }).then(function(){ saveBtn.disabled = false; });
-    });
-  }
-
-  const cmtBtn = $("btnComment");
-  if (cmtBtn){
-    const mt = api();
-    if (!mt || typeof mt.interactionOpenApi !== "function"){
-      cmtBtn.style.display = "none";   /* 9.49 以下没这能力，不摆假按钮 */
-    } else {
-      cmtBtn.addEventListener("click", function(){
-        const urlEl = $("webUrl");
-        const url = urlEl ? urlEl.textContent.trim() : "";
-        cmtBtn.disabled = true;
-        mt.interactionOpenApi({
-          payload: {
-            action: "post_comment",
-            content: "麦门占卜网页版（实时门店 / 券 / 活动）：" + url
-          }
-        }).then(function(){
-          say("评论区已打开，确认发送就把地址留在评论区了。");
-        }, function(err){
-          say("没打开评论区（" + ((err && err.errMsg) || "未知原因") + "）。");
-        }).then(function(){ cmtBtn.disabled = false; });
-      });
-    }
-  }
+  if (!goBtn) return;
+  goBtn.addEventListener("click", function(){
+    goView("me");
+    const card = $("webBlock");
+    if (card && card.scrollIntoView) card.scrollIntoView({ block: "center" });
+  });
 }
 
 let START_NOW = new Date();

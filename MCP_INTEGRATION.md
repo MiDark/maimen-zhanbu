@@ -126,11 +126,19 @@ FAQ 原文：「能不能请求我自己的服务端接口？网页不能通过 
 **3. 小工具也没有「打开网页」和「复制链接」。** 同一份文档禁了 `window.open`、
 `target="_blank"`、跳转站外 URL、`<iframe>`，也禁了 `navigator.clipboard` /
 `execCommand('copy')`；API 清单（§3.2「列出的即为全部可用 JS API」）里没有任何
-`setClipboardData` 一类能力。所以「点按钮跳网页」「点按钮复制地址」都不可实现，
-只能：① 页内二维码（另一台手机扫）；② `writeTempFile` + `saveImageToPhotosAlbum`
-存二维码到相册，再用微信「扫一扫 → 相册」识别；③ 展示可选中文本的地址；
-④ 9.49+ 用 `interactionOpenApi` 把地址作为评论草稿带到评论区。
-实现见 `scripts/build_minitool.py` 的 `MINITOOL_LIVE_BLOCK`，二维码由 `scripts/make_qr.py` 生成。
+`setClipboardData` 一类能力。所以「点按钮跳网页」「点按钮复制地址」都不可实现。
+
+**4. 连二维码也不行 —— 这是平台包体扫描的硬门槛。** 实测上传被拒：
+`IMG-QR-URL-001[CRITICAL]: 二维码解出非可信 URL`。平台会把包里所有可解码的图片条码
+解出来，域名不在白名单就判 CRITICAL；`target=_blank`、可点外链同样在违规清单里。
+
+**当前做法：包里零 URL、零图片。** 「我的 → 实时数据 · 怎么看」只写三步文字指引
+（打开浏览器 → 搜项目名 `maimen-zhanbu` → 仓库首页第一行即在线体验入口），
+今日页底部一个「实时数据怎么看」定位按钮。构建脚本会把 Star 链接的 `href` 置 `#`、
+把可见域名文本换成「GitHub 搜 maimen-zhanbu」，并在自检里断言包内不含
+`http(s)://`（XML 命名空间除外）、不含 `github.com/`、不含任何内联位图。
+实现见 `scripts/build_minitool.py` 的 `MINITOOL_LIVE_BLOCK`，上传前跑
+`python3 scripts/audit_minitool.py` 复核。
 
 技能里的数据流是这样闭合的：连接器调工具 → Agent 把结果按固定结构写成 `real.json`
 （格式见 `skill/SKILL.md` 第 1.5 步）→ `demo_offline.py --real real.json` 渲染命卡。

@@ -11,7 +11,6 @@
 用法：python3 scripts/build_minitool.py
 产物：minitool/dist/{index.html, app.js, mcd_data.js}
 """
-import base64
 import re
 import shutil
 import sys
@@ -21,15 +20,14 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "web" / "index.html"
 DATA = ROOT / "web" / "mcd_data.js"
 OUT = ROOT / "minitool" / "dist"
-QR_PNG = ROOT / "minitool" / "assets" / "qr-web.png"
-
-# 网页版地址（小工具唯一能「把人送出去」的落点：扫码 / 存图识别）
-WEB_URL = "https://midark.github.io/maimen-zhanbu/"
 
 VIEWPORT_NEW = (
     'content="width=device-width, initial-scale=1.0, '
     'maximum-scale=1.0, user-scalable=no, viewport-fit=cover"'
 )
+
+# XML 命名空间常量：SVG 序列化必须要，且不是网络请求，安全扫描里唯一的豁免项
+W3C_NS = ("http://www.w3.org/2000/svg", "http://www.w3.org/1999/xhtml")
 
 # 容器安全版「导出」块：替换 web 版里 /* ── 导出 ── */ 到 /* ── Toast ── */ 之间内容
 EXPORT_BLOCK = '''/* ── 导出 ── */
@@ -109,41 +107,34 @@ function saveImage(){
 
 /* ── Toast ── */'''
 
-# 小工具版「去网页版」区块：容器禁联网 / 禁跳外链 / 禁剪贴板，
-# 所以只有两条路 —— ① 扫二维码 ② 存图后用微信「扫一扫→相册」识别；
-# 另外把地址做成可选中文本，并可选唤起评论区把地址带走（9.49+）。
-MINITOOL_LIVE_BLOCK = '''<!-- 小工具版：容器禁联网/禁外链/禁剪贴板 → 用二维码把人送到网页版 -->
+# 小工具版：容器禁联网 / 禁跳外链 / 禁剪贴板，且平台安全扫描会把**图片里的二维码**
+# 解码出来判风险（IMG-QR-URL-001），所以包里既不能有站外 URL 文本，也不能有二维码图。
+# 这里只讲清楚「为什么这里是快照、实时数据去哪看」，不给地址、不放码。
+MINITOOL_LIVE_BLOCK = '''<!-- 小工具版：离线快照说明（包内不含任何站外 URL / 二维码） -->
     <style>
-      .qrimg{display:block;width:186px;height:186px;margin:14px auto 8px;
-        border:1px solid var(--line);background:#FFFDF8;padding:6px;}
-      .qrtip{text-align:center;font-size:12.5px;color:var(--ink-300);line-height:1.75;margin-bottom:6px;}
-      .qrtip b{color:var(--ink-700);}
-      .urlbox{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.65;
-        color:var(--cinnabar-dark);background:rgba(181,74,58,.06);border:1px solid var(--line);
-        padding:10px 12px;margin-top:12px;word-break:break-all;
-        -webkit-user-select:text;user-select:text;}
+      .howto{font-size:13px;line-height:2;color:var(--ink-700);margin:10px 0 2px}
+      .howto i{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;
+        font-style:normal;font-size:11.5px;border-radius:50%;margin-right:8px;
+        background:rgba(181,74,58,.10);color:var(--cinnabar-dark);font-weight:700}
+      .howto b{color:var(--ink-900)}
     </style>
     <div class="block" id="webBlock">
-      <div class="bt">查实时 · 去网页版</div>
+      <div class="bt">实时数据 · 怎么看</div>
       <div class="about">
-        小工具是<b>离线包</b>：容器不联网，所以这里的门店 / 券 / 活动只能是<b>打包那一刻的快照</b>。
+        小工具是<b>离线包</b>：容器不联网，所以这里的门店 / 券 / 活动是<b>打包那一刻的快照</b>，
+        页脚写着抓取时间（服务端每 3 小时刷一次）。
         <br><br>
-        要看<b>此刻</b>的门店和券，去<b>网页版</b>——同一套卦，数据是活的，还能填自己的 Token 看积分。
+        要查<b>此刻</b>的店和券、以及自己的积分，用<b>网页版</b>——同一套卦，数据是活的。
       </div>
-      <img class="qrimg" id="qrImg" src="__QR_DATA_URI__" alt="麦门占卜网页版二维码">
-      <div class="qrtip">用<b>另一台手机</b>扫它；或点下面存图，<br>再用微信「扫一扫 → 相册」识别这张图</div>
-      <button class="btn" id="btnQrSave">存 二 维 码 到 相 册</button>
-      <button class="btn ghost" id="btnComment">把 地 址 带 到 评 论 区</button>
-      <div class="urlbox" id="webUrl">__WEB_URL__</div>
-      <p class="note" id="webHint">长按上面这行可以选中地址（容器没有一键复制）。</p>
+      <div class="howto">
+        <div><i>1</i>用手机或电脑的浏览器，打开 <b>GitHub</b></div>
+        <div><i>2</i>搜项目名 <b>maimen-zhanbu</b>（开源的那个）</div>
+        <div><i>3</i>仓库首页第一行就是<b>在线体验</b>入口</div>
+      </div>
+      <p class="note" id="webHint">
+        这一版是离线包，数据以页脚的抓取时间为准；要活的数据就走上面那条路。
+      </p>
     </div>'''
-
-
-def qr_data_uri() -> str:
-    """把二维码 PNG 内联成 data URI —— 容器里 data: 图片可用，也方便直接喂给存相册 API。"""
-    if not QR_PNG.is_file():
-        sys.exit("缺 minitool/assets/qr-web.png，先跑 scripts/make_qr.py")
-    return "data:image/png;base64," + base64.b64encode(QR_PNG.read_bytes()).decode("ascii")
 
 # ES2018+ 语法扫描（直接交付 JS 不得超出 ES2017）
 ES2018_PATTERNS = [
@@ -193,23 +184,21 @@ def build():
     html = html.replace('src="mcd_data.js"', 'src="./mcd_data.js"')
 
     # 4.6) 实时接入降级：容器禁联网、禁跳外链、禁剪贴板，
-    #      mcd_live.js 不引入，整块 UI 换成「扫码去网页版」
+    #      且平台安全扫描会解码包内图片里的二维码（IMG-QR-URL-001），
+    #      mcd_live.js 不引入，整块 UI 换成「离线快照 + 按项目名自己去搜」
     html = re.sub(r'<script src="\.?/?mcd_live\.js"></script>\s*', "", html)
-    block = (MINITOOL_LIVE_BLOCK
-             .replace("__QR_DATA_URI__", qr_data_uri())
-             .replace("__WEB_URL__", WEB_URL))
     html = re.sub(r"<!-- LIVE-BLOCK-START.*?<!-- LIVE-BLOCK-END -->",
-                  lambda _m: block, html, flags=re.S)
-    if "liveBlock" in html or "mcd_live.js" in html or "__QR_DATA_URI__" in html:
+                  lambda _m: MINITOOL_LIVE_BLOCK, html, flags=re.S)
+    if "liveBlock" in html or "mcd_live.js" in html:
         sys.exit("实时接入块没替换干净")
 
-    # 4.65) 今日页给一个直达入口：小工具里没有底部强引导，靠这一行把人带到「我的」页
+    # 4.65) 今日页给一个入口：小工具里没有底部强引导，靠这一行把人带到说明区
     src_line = '<p class="src" id="srcLine">麦当劳数据</p>'
     if src_line not in html:
         sys.exit("没找到今日页的 srcLine")
     html = html.replace(
         src_line,
-        src_line + '\n    <button class="btn ghost" id="btnGoWeb">去 网 页 版 看 实 时</button>',
+        src_line + '\n    <button class="btn ghost" id="btnGoWeb">实 时 数 据 怎 么 看</button>',
     )
 
     # 4.6) 外链降级：容器禁打开外链，Star 链接去掉 href/target，点击由 JS 提示项目名
@@ -218,6 +207,10 @@ def build():
         r'<a \1 href="#">',
         html,
     )
+    # 4.62) 连「github.com/…」这种可见域名文本也去掉：包体扫描对域名很敏感，
+    #       统一换成「搜项目名」的说法
+    html = html.replace(">github.com/MiDark/maimen-zhanbu<", ">GitHub 搜 maimen-zhanbu<")
+    html = html.replace(">MiDark/maimen-zhanbu<", ">GitHub 搜 maimen-zhanbu<")
 
     # 5) 写产物
     if OUT.exists():
@@ -254,10 +247,32 @@ def build():
         errors.append(f"index.html: 外部引用 {mm.group(1)[:60]}")
     if 'src="./app.js"' not in html or 'src="./mcd_data.js"' not in html:
         errors.append("index.html: 脚本引用缺失")
-    # 去网页版的三件套：二维码 data URI、存图按钮、今日页入口
-    for need in ('data:image/png;base64,', 'id="btnQrSave"', 'id="btnGoWeb"'):
+
+    # ── 包体安全扫描对拍（IMG-QR-URL-001 之类的硬门槛）──
+    # 1) 任何站外 URL 文本都不许出现，唯一豁免是 XML 命名空间常量
+    for name, text in (("index.html", html), ("app.js", js)):
+        cleaned = text
+        for ns in W3C_NS:
+            cleaned = cleaned.replace(ns, "")
+        for mm in re.finditer(r"https?://[^\s\"'<>()\\]{3,}", cleaned):
+            errors.append(f"{name}: 包内含站外 URL {mm.group(0)[:50]}")
+        if "midark.github.io" in cleaned:
+            errors.append(f"{name}: 包内含 GitHub Pages 域名")
+        if "github.com/" in cleaned:
+            errors.append(f"{name}: 包内含 github.com 路径文本")
+    # 2) 不许内联位图（二维码就是靠这个混进来的）
+    for name, text in (("index.html", html), ("app.js", js)):
+        if re.search(r"data:image/(?:png|jpe?g|webp|gif);base64,", text):
+            errors.append(f"{name}: 内联位图 data URI（疑似二维码）")
+        if re.search(r"<img[^>]+src=", text):
+            errors.append(f"{name}: 含 <img> 图片元素")
+    # 3) 结构要素：说明区 + 今日页入口，且没有二维码相关残留
+    for need in ('id="webBlock"', 'id="btnGoWeb"'):
         if need not in html:
-            errors.append(f"index.html: 缺「去网页版」要素 {need}")
+            errors.append(f"index.html: 缺要素 {need}")
+    for bad in ("qrImg", "btnQrSave", "btnComment", "webUrl", "interactionOpenApi"):
+        if bad in html or bad in js:
+            errors.append(f"index.html: 二维码/评论残留 {bad}")
 
     sizes = {p.name: p.stat().st_size for p in sorted(OUT.iterdir())}
     print("产物：", OUT)
