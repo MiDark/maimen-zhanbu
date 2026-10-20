@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# 编辑器 / 系统
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# 运行时产物（本地生成，不入库）
+fortune.json
+麦门命卡.html
+*.log
+
+# 密钥类：绝不入库
+.mcd_token
+.env
+
+# 截图临时产物
+.tmp_shots/
+.tmp_shot/
+
+# 构建产物
+dist/
