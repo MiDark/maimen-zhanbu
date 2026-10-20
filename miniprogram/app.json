@@ -1,0 +1,11 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "麦门占卜·程序员麦占",
+    "navigationBarBackgroundColor": "#F5F0E8",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F5F0E8"
+  }
+}

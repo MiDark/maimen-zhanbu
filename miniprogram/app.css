@@ -1,0 +1,8 @@
+/* 全局样式（承「命理全鉴」：宣纸底 / 墨黑 / 朱红 / 描金） */
+page {
+  background: #F5F0E8;
+  color: #2A2A2A;
+  font-family: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  font-size: 28rpx;
+  line-height: 1.75;
+}

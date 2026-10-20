@@ -1,0 +1,289 @@
+<!-- 麦门占卜 · 小程序单页应用
+     底部四个主功能切页；首屏只留结论，术语收进折叠 -->
+<view class="app">
+
+  <view class="topbar">
+    <text class="tb-side">{{dateStr}}</text>
+    <text class="tb-mid">麦 门 占 卜</text>
+    <text class="tb-side">{{vm ? vm.zhiShi : ''}}</text>
+  </view>
+
+  <!-- ══════════ 今日 ══════════ -->
+  <view class="view {{view === 'today' ? 'on' : ''}}">
+    <view class="hero">
+      <view class="hero-kicker">给 程 序 员 的 一 天</view>
+      <view class="hero-title">今日麦占</view>
+      <view class="hero-sub">起一卦，看你今天点哪份</view>
+      <view class="tags">
+        <text class="tag" wx:for="{{vm.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="score">
+      <view class="score-num">{{vm.score}}<text class="score-unit">分</text></view>
+      <view class="score-grade">{{vm.mai.grade}}</view>
+      <view class="score-line">{{vm.mai.head}}</view>
+    </view>
+
+    <view class="order">
+      <view class="order-k">今 日 点 单</view>
+      <view class="order-main">{{vm.mai.order}}</view>
+      <view class="order-real" wx:if="{{vm.real && vm.real.coupon}}">有券：{{vm.real.coupon}} · {{vm.real.couponStatus}}</view>
+      <view class="order-real" wx:elif="{{vm.real && vm.real.store}}">最近 {{vm.real.store.distText}} 就有一家</view>
+      <view class="order-why">{{vm.mai.tip}}</view>
+    </view>
+
+    <view class="three">
+      <view class="tr">
+        <text class="tr-i do">宜</text>
+        <text class="tr-t">{{vm.yi[0]}}</text>
+      </view>
+      <view class="tr">
+        <text class="tr-i dont">忌</text>
+        <text class="tr-t">{{vm.ji[0]}}</text>
+      </view>
+    </view>
+
+    <view class="btn" bindtap="onCard">抽 今 日 命 卡</view>
+    <view class="src" wx:if="{{vm.real}}">麦当劳数据 · 抓取于 {{vm.real.fetchedAt}}</view>
+    <view class="src" wx:else>这会儿没读到数据 · 卦照常算</view>
+  </view>
+
+  <!-- ══════════ 卦象 ══════════ -->
+  <view class="view {{view === 'gua' ? 'on' : ''}}">
+    <view class="vt">今日卦象</view>
+    <view class="vs">{{vm.hexMainGua}}</view>
+
+    <view class="gua-main">
+      <view class="hex">
+        <view class="yao {{item.yin ? 'yin' : ''}} {{item.dong ? 'dong' : ''}}" wx:for="{{vm.hexMain}}" wx:key="index"></view>
+      </view>
+      <view class="gm-name">{{vm.benName}}</view>
+      <view class="gm-tag">{{vm.tagLine}}</view>
+      <view class="gm-say">{{vm.benSay}}</view>
+    </view>
+
+    <view class="block">
+      <view class="bt">这一爻在说什么</view>
+      <view class="yao-card">
+        <view class="yc-pos">第 <text class="yc-em">{{vm.yao.posCn}}</text> 爻动（{{vm.yao.yinYang}}）</view>
+        <view class="yc-stage">{{vm.yao.stage}} · {{vm.yao.stageDesc}}</view>
+        <view class="yc-text">{{vm.yao.text}}</view>
+        <view class="yc-note">还有一句：{{vm.note}}</view>
+      </view>
+    </view>
+
+    <view class="block">
+      <view class="bt">今天的三段走势</view>
+      <view class="tris">
+        <view class="tri {{item.now ? 'now' : ''}}" wx:for="{{vm.tris}}" wx:key="index">
+          <view class="tri-hex">
+            <view class="yao sm {{it.yin ? 'yin' : ''}} {{it.dong ? 'dong' : ''}}" wx:for-item="it" wx:for="{{item.hex}}" wx:key="index"></view>
+          </view>
+          <view class="tri-b">
+            <view class="tri-k">{{item.label}}</view>
+            <view class="tri-n">{{item.name}}</view>
+            <view class="tri-g">{{item.gua}}</view>
+            <view class="tri-d">{{item.say}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="block">
+      <view class="bt">你和这顿麦</view>
+      <view class="ty">
+        <view class="ty-cell">
+          <text class="ty-k">你这边</text>
+          <text class="ty-b">{{vm.profile.tiXiang}}</text>
+          <text class="ty-p">{{vm.profile.tiNature}}</text>
+        </view>
+        <view class="ty-cell">
+          <text class="ty-k">这顿麦</text>
+          <text class="ty-b">{{vm.profile.yongXiang}}</text>
+          <text class="ty-p">{{vm.profile.yongNature}}</text>
+        </view>
+        <view class="ty-cell full">
+          <text class="ty-b rel">{{vm.ti.rel}}</text>
+          <text class="ty-p">{{vm.ti.note}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="block">
+      <view class="bt">今日幸运物</view>
+      <view class="lucky">
+        <view class="lk"><text class="lk-k">幸运色</text><text class="lk-v">{{vm.lucky.color}}</text></view>
+        <view class="lk"><text class="lk-k">幸运数字</text><text class="lk-v">{{vm.lucky.num}}</text></view>
+        <view class="lk"><text class="lk-k">好方位</text><text class="lk-v">{{vm.lucky.dir}}</text></view>
+        <view class="lk"><text class="lk-k">好时段</text><text class="lk-v">{{vm.lucky.hour}}</text></view>
+      </view>
+    </view>
+
+    <view class="fold">
+      <view class="fold-h" bindtap="onFold" data-k="openDetail">
+        <text>卦是怎么来的</text>
+        <text class="fold-x">{{openDetail ? '收起' : '展开'}}</text>
+      </view>
+      <view class="fold-b" wx:if="{{openDetail}}">
+        <view class="row"><text>起卦时辰</text><text>{{vm.qi.time}}</text></view>
+        <view class="row"><text>上卦</text><text>{{vm.qi.up}}</text></view>
+        <view class="row"><text>下卦</text><text>{{vm.qi.down}}</text></view>
+        <view class="row"><text>动爻</text><text>{{vm.qi.dong}}</text></view>
+        <view class="row"><text>本卦</text><text>{{vm.benName}}</text></view>
+        <view class="row"><text>互卦</text><text>{{vm.huName}}</text></view>
+        <view class="row"><text>变卦</text><text>{{vm.bianName}}</text></view>
+        <view class="fold-n">不用懂也没关系，上面那几句才是结论。</view>
+      </view>
+    </view>
+
+    <view class="btn ghost" bindtap="onAgain">换 个 时 辰 再 算</view>
+  </view>
+
+  <!-- ══════════ 门店 ══════════ -->
+  <view class="view {{view === 'store' ? 'on' : ''}}">
+    <view class="vt">附近麦门</view>
+    <view class="vs">附近门店 · 数据来自麦当劳</view>
+
+    <block wx:if="{{vm.real}}">
+      <view class="store-hero" wx:if="{{vm.real.store}}">
+        <view class="sh-dist">{{vm.real.store.distText}}</view>
+        <view class="sh-name">{{vm.real.store.name}}</view>
+        <view class="sh-addr">{{vm.real.store.address}}</view>
+        <view class="sh-tags">
+          <text>{{vm.real.store.open}}–{{vm.real.store.close}}</text>
+          <text wx:if="{{vm.real.store.openNow}}">现在开着</text>
+          <text wx:if="{{vm.real.store.reservation}}">可预约</text>
+        </view>
+      </view>
+
+      <view class="list" wx:if="{{vm.real.stores.length}}">
+        <view class="li" wx:for="{{vm.real.stores}}" wx:key="index">
+          <view class="li-n">
+            <text class="li-t">{{item.name}}</text>
+            <text class="li-s">{{item.address}}</text>
+          </view>
+          <text class="li-d">{{item.dist}}</text>
+        </view>
+      </view>
+
+      <view class="block">
+        <view class="bt">能领的券</view>
+        <view class="coupons">
+          <view class="cp" wx:for="{{vm.real.coupons}}" wx:key="index">
+            <text class="cp-t">{{item.title}}</text>
+            <text class="cp-s">{{item.status}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="block">
+        <view class="bt">这个月的活动</view>
+        <view class="camps">
+          <view class="camp" wx:for="{{vm.real.campaigns}}" wx:key="index">
+            <text class="camp-t">{{item.title}}</text>
+            <text class="camp-d">{{item.date}} · {{item.tag}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="block">
+        <view class="bt">我的麦麦</view>
+        <view class="empty" wx:if="{{vm.real.pointsMasked}}">这里不显示个人积分。想看自己的，在 WorkBuddy 里用技能版。</view>
+        <view class="ty" wx:else>
+          <view class="ty-cell">
+            <text class="ty-k">可用积分</text>
+            <text class="ty-b">{{vm.real.points.available}}</text>
+          </view>
+          <view class="ty-cell">
+            <text class="ty-k">累计积分</text>
+            <text class="ty-b">{{vm.real.points.accumulative}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="src">数据抓取于 {{vm.real.fetchedAt}} · 价格与库存以门店为准</view>
+    </block>
+
+    <view class="empty" wx:else>
+      这会儿读不到门店数据。卦和命卡照常，今天吃啥照样算。
+    </view>
+  </view>
+
+  <!-- ══════════ 我的 ══════════ -->
+  <view class="view {{view === 'me' ? 'on' : ''}}">
+    <view class="vt">我的外应</view>
+    <view class="vs">今天干了什么，算得更准一点</view>
+
+    <view class="form">
+      <view class="fld">
+        <text class="fld-l">今天写什么</text>
+        <picker mode="selector" range="{{langs}}" value="{{langIndex}}" bindchange="onLang">
+          <view class="fld-v">{{lang}} ▾</view>
+        </picker>
+      </view>
+      <view class="fld">
+        <text class="fld-l">提交几次</text>
+        <input class="fld-i" type="number" value="{{form.commits}}" bindinput="onInput" data-k="commits" />
+      </view>
+      <view class="fld">
+        <text class="fld-l">出了几个错</text>
+        <input class="fld-i" type="number" value="{{form.bugs}}" bindinput="onInput" data-k="bugs" />
+      </view>
+      <view class="fld">
+        <text class="fld-l">今天加班了吗</text>
+        <switch checked="{{overtime}}" color="#B54A3A" bindchange="onOt" />
+      </view>
+    </view>
+
+    <view class="note" style="margin:10px 0 0;">改完立刻生效，不用点按钮；外应只影响分数与点单，不影响卦象。</view>
+
+    <view class="btn" bindtap="onAgain">重 新 起 卦</view>
+
+    <view class="block">
+      <view class="bt">接你自己的麦（可选）</view>
+      <view class="about">这一版用的是公开数据（什么时候抓的写在页脚），不碰你的账号，所以不用登录，也不用填任何东西。</view>
+      <view class="about">想看自己的积分和常去的那家店，在 WorkBuddy 里装这个技能，用麦当劳账号申请一次 MCP 权限就行。</view>
+    </view>
+
+    <view class="block">
+      <view class="bt">关于这个玩意儿</view>
+      <view class="about">卦是正经梅花易数时间卦：以此刻年月日时起本卦，翻动爻得变卦，取互卦看过程，用体用论生克。</view>
+      <view class="about">话不正经，就为让你在工位上笑一下。不碰生辰八字，不上传任何个人信息；门店、券、活动来自麦当劳公开数据，只查不买，不会替你下单或领券。</view>
+      <view class="about">仅供娱乐，不构成任何建议。信则有，不信也得吃饭。</view>
+      <view class="seal">墨喵之印</view>
+      <view class="copy">麦门占卜 · 程序员麦占</view>
+    </view>
+  </view>
+
+  <!-- ══════════ 底栏 ══════════ -->
+  <view class="tabbar">
+    <view class="tab {{view === item.k ? 'on' : ''}}" wx:for="{{tabs}}" wx:key="k" bindtap="onTab" data-v="{{item.k}}">
+      <view class="tab-dot"></view>
+      <text class="tab-t">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 起卦仪式 -->
+  <view class="ritual" wx:if="{{ritual}}">
+    <view class="rh">
+      <view class="yao r {{item.yin ? 'yin' : ''}} {{item.on ? 'on' : ''}}" wx:for="{{rHex}}" wx:key="index"></view>
+    </view>
+    <view class="ritual-t">起 卦</view>
+  </view>
+
+  <!-- 命卡 -->
+  <view class="sheet" wx:if="{{cardOpen}}" bindtap="onCloseCard">
+    <view class="card-face" catchtap="noop">
+      <view class="cf-hex">
+        <view class="yao cf {{item.yin ? 'yin' : ''}}" wx:for="{{vm.hexMain}}" wx:key="index"></view>
+      </view>
+      <view class="cf-name">{{vm.benName}}</view>
+      <view class="cf-star">{{vm.card.name}} · {{vm.card.star}}</view>
+      <view class="cf-bless">{{vm.card.blessing}}</view>
+      <view class="cf-seal">麦</view>
+    </view>
+    <view class="sheet-close" catchtap="onCloseCard">收 起</view>
+  </view>
+
+</view>

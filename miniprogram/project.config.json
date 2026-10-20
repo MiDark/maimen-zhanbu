@@ -1,0 +1,10 @@
+{
+  "appid": "YOUR_XIAOHONGSHU_APPID",
+  "compileType": "miniprogram",
+  "projectname": "maimen-zhanbu",
+  "description": "麦门占卜·程序员麦占 —— 纯前端梅花易数时间卦，无 Token，新国风宣纸朱红",
+  "setting": {
+    "es6": true,
+    "minified": false
+  }
+}

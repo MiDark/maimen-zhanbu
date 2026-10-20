@@ -1,0 +1,773 @@
+/* ============================================================
+   麦门占卜 · 小程序单页应用
+   宣纸底 #F5F0E8 / 墨黑 #0D0D0D / 朱红 #B54A3A / 描金 #C4A35A
+   底部四个主功能切页；首屏只留结论；单位 rpx（750 设计宽）
+   ============================================================ */
+page {
+  background: #F5F0E8;
+  --paper: #F5F0E8;
+  --ink-900: #0D0D0D;
+  --ink-700: #2A2622;
+  --ink-500: #55504A;
+  --ink-300: #8B8479;
+  --cinnabar: #B54A3A;
+  --gold: #C4A35A;
+  --green: #2F7D52;
+  --line: rgba(181, 74, 58, .16);
+  --line2: rgba(13, 13, 13, .08);
+}
+
+.app {
+  background: var(--paper);
+  color: var(--ink-900);
+  min-height: 100vh;
+  padding-bottom: 180rpx;
+  font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+}
+
+/* ── 顶栏 ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 40rpx 16rpx;
+  font-size: 24rpx;
+  color: var(--ink-300);
+  letter-spacing: 2rpx;
+}
+.tb-mid {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 22rpx;
+  color: var(--cinnabar);
+  letter-spacing: 8rpx;
+}
+
+/* ── 视图 ── */
+.view { display: none; padding: 0 40rpx; }
+.view.on { display: block; }
+
+/* ── 卷首（居中） ── */
+.hero { text-align: center; padding-top: 10rpx; }
+.hero-kicker {
+  font-size: 24rpx;
+  letter-spacing: 14rpx;
+  text-indent: 14rpx;
+  color: var(--ink-300);
+  margin-bottom: 18rpx;
+}
+.hero-title {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 88rpx;
+  font-weight: 900;
+  line-height: 1.14;
+  letter-spacing: 10rpx;
+  text-indent: 10rpx;
+}
+.hero-sub {
+  margin-top: 16rpx;
+  font-size: 30rpx;
+  color: var(--ink-500);
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14rpx;
+  margin-top: 24rpx;
+}
+.tag {
+  font-size: 24rpx;
+  color: #8B3A2E;
+  border: 1px solid var(--line);
+  background: rgba(181, 74, 58, .05);
+  padding: 8rpx 22rpx;
+}
+
+/* ── 麦气 ── */
+.score {
+  margin-top: 32rpx;
+  text-align: center;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 28rpx 0 24rpx;
+}
+.score-num {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 156rpx;
+  font-weight: 900;
+  line-height: .92;
+  color: var(--cinnabar);
+}
+.score-unit {
+  font-size: 34rpx;
+  color: var(--ink-300);
+  margin-left: 8rpx;
+}
+.score-grade {
+  margin-top: 10rpx;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 36rpx;
+  letter-spacing: 14rpx;
+  text-indent: 14rpx;
+}
+.score-line {
+  margin-top: 8rpx;
+  font-size: 30rpx;
+  color: var(--ink-500);
+}
+
+/* ── 今日点单 ── */
+.order {
+  position: relative;
+  margin-top: 32rpx;
+  padding: 34rpx 30rpx 30rpx;
+  background: linear-gradient(160deg, #FFFDF8, #F3EDE0);
+  border: 1px solid var(--line);
+}
+.order-k {
+  text-align: center;
+  font-size: 24rpx;
+  letter-spacing: 13rpx;
+  text-indent: 13rpx;
+  color: var(--cinnabar);
+}
+.order-main {
+  margin-top: 18rpx;
+  text-align: center;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 60rpx;
+  font-weight: 900;
+  line-height: 1.3;
+}
+.order-real {
+  margin-top: 14rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--green);
+  line-height: 1.6;
+}
+.order-why {
+  margin-top: 22rpx;
+  padding-top: 20rpx;
+  border-top: 1px dashed var(--line);
+  font-size: 26rpx;
+  color: var(--ink-500);
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* ── 三件事 ── */
+.three {
+  margin-top: 28rpx;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .42);
+}
+.tr {
+  display: flex;
+  align-items: flex-start;
+  gap: 22rpx;
+  padding: 22rpx 26rpx;
+}
+.tr + .tr { border-top: 1px solid var(--line2); }
+.tr-i {
+  flex: none;
+  width: 50rpx;
+  height: 50rpx;
+  line-height: 48rpx;
+  text-align: center;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 28rpx;
+  border: 1px solid currentColor;
+}
+.tr-i.do { color: var(--green); }
+.tr-i.dont { color: var(--cinnabar); }
+.tr-t {
+  flex: 1;
+  font-size: 30rpx;
+  color: var(--ink-700);
+  line-height: 1.6;
+  padding-top: 4rpx;
+}
+
+/* ── 按钮 ── */
+.btn {
+  margin-top: 36rpx;
+  padding: 30rpx;
+  background: var(--cinnabar);
+  color: #FFF8F0;
+  text-align: center;
+  font-size: 32rpx;
+  letter-spacing: 12rpx;
+  text-indent: 12rpx;
+}
+.btn.ghost {
+  background: transparent;
+  color: var(--ink-700);
+  border: 1px solid var(--line);
+  font-size: 28rpx;
+  letter-spacing: 6rpx;
+}
+.src {
+  margin-top: 22rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--ink-300);
+}
+
+/* ── 通用块 ── */
+.vt {
+  text-align: center;
+  padding-top: 24rpx;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 50rpx;
+  font-weight: 900;
+  letter-spacing: 8rpx;
+}
+.vs {
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--ink-300);
+  margin-top: 8rpx;
+}
+.block { margin-top: 44rpx; }
+.bt {
+  font-size: 24rpx;
+  letter-spacing: 8rpx;
+  color: var(--cinnabar);
+  padding-left: 18rpx;
+  border-left: 6rpx solid var(--cinnabar);
+  margin-bottom: 20rpx;
+  line-height: 1.4;
+}
+
+/* ── 卦画 ── */
+.hex {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  width: 240rpx;
+  margin: 0 auto;
+}
+.yao {
+  height: 24rpx;
+  background: var(--ink-900);
+}
+.yao.yin {
+  background: linear-gradient(90deg, #0D0D0D 0 41%, transparent 41% 59%, #0D0D0D 59% 100%);
+}
+.yao.dong { background-color: var(--cinnabar); }
+.yao.dong.yin {
+  background: linear-gradient(90deg, #B54A3A 0 41%, transparent 41% 59%, #B54A3A 59% 100%);
+}
+.yao.sm { height: 12rpx; }
+
+.gua-main {
+  text-align: center;
+  padding: 30rpx 0 24rpx;
+  border-bottom: 1px solid var(--line);
+}
+.gm-name {
+  margin-top: 32rpx;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 62rpx;
+  font-weight: 900;
+  letter-spacing: 8rpx;
+}
+.gm-tag {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: var(--ink-300);
+  letter-spacing: 3rpx;
+}
+.gm-say {
+  margin-top: 22rpx;
+  font-size: 30rpx;
+  color: var(--ink-700);
+  line-height: 1.75;
+}
+
+/* ── 动爻卡 ── */
+.yao-card {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .45);
+  padding: 30rpx 28rpx 26rpx;
+}
+.yc-pos {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 40rpx;
+  font-weight: 900;
+  letter-spacing: 4rpx;
+}
+.yc-em { color: var(--cinnabar); }
+.yc-stage {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+  color: var(--ink-300);
+}
+.yc-text {
+  margin-top: 16rpx;
+  font-size: 30rpx;
+  color: var(--ink-700);
+  line-height: 1.7;
+}
+.yc-note {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1px dashed var(--line);
+  font-size: 26rpx;
+  color: var(--ink-500);
+  line-height: 1.7;
+}
+
+/* ── 三卦 ── */
+.tris { border: 1px solid var(--line); }
+.tri {
+  display: flex;
+  align-items: center;
+  gap: 26rpx;
+  padding: 28rpx;
+  background: rgba(255, 255, 255, .4);
+}
+.tri + .tri { border-top: 1px solid var(--line2); }
+.tri.now { background: rgba(181, 74, 58, .06); }
+.tri-hex {
+  flex: none;
+  width: 124rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.tri-b { flex: 1; min-width: 0; }
+.tri-k { font-size: 22rpx; color: var(--ink-300); letter-spacing: 3rpx; }
+.tri-n {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 36rpx;
+  font-weight: 900;
+  letter-spacing: 3rpx;
+  margin-top: 4rpx;
+}
+.tri-g { font-size: 22rpx; color: var(--ink-300); margin-top: 2rpx; }
+.tri-d {
+  font-size: 26rpx;
+  color: var(--ink-500);
+  margin-top: 10rpx;
+  line-height: 1.6;
+}
+
+/* ── 体用 ── */
+.ty {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+.ty-cell {
+  flex: 1 1 45%;
+  background: var(--paper);
+  padding: 28rpx 20rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+.ty-cell + .ty-cell { border-left: 1px solid var(--line); }
+.ty-cell.full {
+  flex: 1 1 100%;
+  border-left: none;
+  border-top: 1px solid var(--line);
+  background: rgba(181, 74, 58, .05);
+}
+.ty-k { display: block; font-size: 22rpx; color: var(--ink-300); letter-spacing: 2rpx; }
+.ty-b {
+  display: block;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 38rpx;
+  font-weight: 900;
+  letter-spacing: 3rpx;
+  margin-top: 8rpx;
+}
+.ty-b.rel { color: var(--cinnabar); }
+.ty-p {
+  display: block;
+  font-size: 26rpx;
+  color: var(--ink-500);
+  margin-top: 10rpx;
+  line-height: 1.6;
+}
+
+/* ── 幸运物 ── */
+.lucky {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+}
+.lk {
+  flex: 1 1 45%;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .4);
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+.lk-k { display: block; font-size: 22rpx; color: var(--ink-300); letter-spacing: 3rpx; }
+.lk-v {
+  display: block;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 32rpx;
+  font-weight: 900;
+  margin-top: 8rpx;
+}
+
+/* ── 折叠 ── */
+.fold {
+  margin-top: 40rpx;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.fold-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 4rpx;
+  font-size: 26rpx;
+  color: var(--ink-500);
+}
+.fold-x { font-size: 22rpx; color: var(--ink-300); }
+.fold-b { padding: 0 4rpx 28rpx; }
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 14rpx 0;
+  border-bottom: 1px solid var(--line2);
+  font-size: 26rpx;
+  color: var(--ink-500);
+}
+.fold-n {
+  margin-top: 20rpx;
+  font-size: 24rpx;
+  color: var(--ink-300);
+  line-height: 1.7;
+}
+
+/* ── 门店 ── */
+.store-hero {
+  margin-top: 24rpx;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, #FFFDF8, #F1EADA);
+  padding: 34rpx 28rpx;
+  text-align: center;
+}
+.sh-dist {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 78rpx;
+  font-weight: 900;
+  color: var(--cinnabar);
+  line-height: 1;
+}
+.sh-name {
+  margin-top: 20rpx;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 36rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+}
+.sh-addr {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--ink-500);
+  line-height: 1.6;
+}
+.sh-tags {
+  display: flex;
+  justify-content: center;
+  gap: 12rpx;
+  margin-top: 20rpx;
+}
+.sh-tags text {
+  font-size: 22rpx;
+  padding: 6rpx 16rpx;
+  border: 1px solid var(--line);
+  color: #8B3A2E;
+}
+
+.list { margin-top: 20rpx; border: 1px solid var(--line); }
+.li {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 26rpx;
+  background: rgba(255, 255, 255, .4);
+}
+.li + .li { border-top: 1px solid var(--line2); }
+.li-n { flex: 1; min-width: 0; }
+.li-t {
+  display: block;
+  font-size: 28rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li-s {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--ink-300);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.li-d {
+  flex: none;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 28rpx;
+  color: var(--cinnabar);
+}
+
+.coupons { display: flex; flex-direction: column; gap: 16rpx; }
+.cp {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  border: 1px solid var(--line);
+  border-left: 6rpx solid var(--cinnabar);
+  padding: 24rpx 26rpx;
+  background: rgba(255, 255, 255, .5);
+}
+.cp-t {
+  flex: 1;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.cp-s {
+  flex: none;
+  font-size: 22rpx;
+  color: var(--green);
+  border: 1px solid rgba(47, 125, 82, .3);
+  padding: 4rpx 14rpx;
+}
+
+.camps { display: flex; flex-direction: column; gap: 16rpx; }
+.camp {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .4);
+  padding: 24rpx 26rpx;
+}
+.camp-t { display: block; font-size: 28rpx; line-height: 1.6; }
+.camp-d {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--ink-300);
+}
+
+.empty {
+  margin-top: 40rpx;
+  padding: 50rpx 34rpx;
+  border: 1px dashed var(--line);
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--ink-300);
+  line-height: 1.9;
+}
+
+/* ── 表单 ── */
+.form {
+  margin-top: 24rpx;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .42);
+}
+.fld {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 26rpx 28rpx;
+}
+.fld + .fld { border-top: 1px solid var(--line2); }
+.fld-l { font-size: 30rpx; color: var(--ink-700); }
+.fld-v {
+  font-size: 28rpx;
+  color: var(--cinnabar);
+  border: 1px solid var(--line);
+  padding: 12rpx 22rpx;
+  min-width: 160rpx;
+  text-align: center;
+}
+.fld-i {
+  width: 140rpx;
+  font-size: 28rpx;
+  text-align: center;
+  border: 1px solid var(--line);
+  padding: 10rpx 0;
+}
+
+.about {
+  font-size: 26rpx;
+  color: var(--ink-500);
+  line-height: 1.9;
+  margin-bottom: 22rpx;
+}
+.seal {
+  width: 120rpx;
+  height: 120rpx;
+  margin: 40rpx auto 16rpx;
+  border: 3rpx solid var(--cinnabar);
+  color: var(--cinnabar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 28rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+}
+.copy {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--ink-300);
+  letter-spacing: 4rpx;
+}
+
+/* ── 底栏 ── */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  height: 150rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(245, 240, 232, .96);
+  border-top: 1px solid var(--line);
+  box-sizing: content-box;
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  color: var(--ink-300);
+}
+.tab-dot {
+  width: 18rpx;
+  height: 18rpx;
+  border: 2rpx solid currentColor;
+  border-radius: 50%;
+}
+.tab.on { color: var(--cinnabar); }
+.tab.on .tab-dot { background: var(--cinnabar); }
+.tab-t { font-size: 22rpx; letter-spacing: 2rpx; }
+
+/* ── 起卦仪式 ── */
+.ritual {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.rh {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  width: 220rpx;
+  margin-bottom: 44rpx;
+}
+.yao.r {
+  height: 20rpx;
+  opacity: .1;
+  transition: opacity .22s ease;
+}
+.yao.r.on { opacity: 1; }
+.ritual-t {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 32rpx;
+  letter-spacing: 16rpx;
+  text-indent: 16rpx;
+  color: var(--ink-500);
+}
+
+/* ── 命卡弹层 ── */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(13, 13, 13, .55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.card-face {
+  position: relative;
+  width: 600rpx;
+  height: 800rpx;
+  background: linear-gradient(155deg, #1A1614 0%, #2A211C 48%, #16110F 100%);
+  border: 1px solid rgba(196, 163, 90, .5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  box-sizing: border-box;
+}
+.cf-hex {
+  width: 200rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  margin-bottom: 40rpx;
+}
+.yao.cf { height: 16rpx; background: #E8DCC2; }
+.yao.cf.yin {
+  background: linear-gradient(90deg, #E8DCC2 0 41%, transparent 41% 59%, #E8DCC2 59% 100%);
+}
+.cf-name {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 56rpx;
+  font-weight: 900;
+  color: #F6EEDC;
+  letter-spacing: 8rpx;
+}
+.cf-star {
+  margin-top: 18rpx;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 28rpx;
+  color: var(--gold);
+  letter-spacing: 4rpx;
+}
+.cf-bless {
+  margin-top: 34rpx;
+  font-size: 26rpx;
+  line-height: 1.9;
+  color: rgba(243, 233, 214, .8);
+  text-align: center;
+}
+.cf-seal {
+  position: absolute;
+  right: 36rpx;
+  bottom: 30rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border: 2rpx solid var(--cinnabar);
+  color: var(--cinnabar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 36rpx;
+  font-weight: 900;
+}
+.sheet-close {
+  margin-top: 32rpx;
+  padding: 18rpx 48rpx;
+  border: 1px solid rgba(255, 255, 255, .28);
+  color: rgba(255, 255, 255, .85);
+  font-size: 26rpx;
+  letter-spacing: 6rpx;
+}
