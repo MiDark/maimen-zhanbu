@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F5F0E8">
+<title>麦门占卜 · 今日命卡</title>
+<style>
+/* ============================================================
+   麦门命卡（命书折页）
+   设计承接「命理全鉴」：宣纸底 / 墨黑 / 朱红 / 描金
+   ★ 移动优先：390 宽为基准单列，宽屏只是把这张折页放中间
+   单文件 · 零外链 · file:// 双击直开
+   ============================================================ */
+:root{
+  --ink-900:#0D0D0D; --ink-800:#1C1C1C; --ink-700:#2A2A2A; --ink-500:#4A4A4A;
+  --ink-300:#7A7A7A; --ink-100:#A0A0A0;
+  --paper:#F5F0E8; --paper-2:#EFE8DA; --paper-warm:#EDE6D6; --paper-cool:#E8E2D4;
+  --cinnabar:#B54A3A; --cinnabar-dark:#8B3A2E; --gold:#C4A35A; --green:#2f7d52;
+  --line:rgba(181,74,58,.16);
+  --serif:"Noto Serif SC","Source Han Serif SC","Songti SC","STSong","SimSun",serif;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{background:var(--paper-2);}
+body{
+  margin:0;background:var(--paper);color:var(--ink-700);
+  font-family:var(--sans);font-size:15px;line-height:1.8;
+  -webkit-text-size-adjust:100%;
+  padding:18px 14px calc(30px + env(safe-area-inset-bottom));
+}
+.sheet{
+  max-width:520px;margin:0 auto;background:rgba(255,255,255,.42);
+  border:1px solid var(--line);position:relative;padding:24px 18px 20px;
+}
+.sheet::before{content:'';position:absolute;inset:6px;border:1px solid rgba(181,74,58,.10);pointer-events:none;}
+
+/* ---------- 卷首 ---------- */
+.hd{text-align:center;padding-bottom:16px;border-bottom:1px solid var(--line);}
+.hd-label{font-size:11px;letter-spacing:4px;color:var(--cinnabar);margin-bottom:12px;}
+.hd-title{
+  font-family:var(--serif);font-size:30px;font-weight:900;color:var(--ink-900);
+  letter-spacing:3px;line-height:1.25;margin:0 0 6px;
+}
+.hd-gua{font-family:var(--serif);font-size:12.5px;color:var(--ink-300);letter-spacing:2px;margin-bottom:8px;}
+/* 卷首关键词 */
+.hd-tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:2px 0 10px;}
+.hd-tags span{font-size:11.5px;color:var(--cinnabar-dark);border:1px solid var(--line);
+  background:rgba(181,74,58,.05);padding:3px 9px;letter-spacing:.5px;}
+.hd-sub{font-family:var(--serif);font-size:15px;color:var(--cinnabar-dark);letter-spacing:.5px;line-height:1.75;}
+.hd-meta{
+  margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);
+  font-size:11.5px;color:var(--ink-300);letter-spacing:1px;line-height:1.7;
+}
+
+/* ---------- 麦气 + 点单 ---------- */
+.mai{margin-top:18px;}
+.mai-top{display:flex;align-items:flex-end;gap:5px;}
+.mai-num{font-family:var(--serif);font-size:52px;font-weight:900;color:var(--cinnabar);line-height:.94;letter-spacing:-1px;}
+.mai-unit{font-size:12px;color:var(--ink-300);padding-bottom:6px;letter-spacing:1px;}
+.mai-grade{
+  margin-left:auto;margin-bottom:6px;padding:2px 9px;border:1px solid var(--cinnabar);
+  font-family:var(--serif);font-size:12.5px;letter-spacing:2px;color:var(--cinnabar-dark);
+}
+.mai-head{font-family:var(--serif);font-size:16.5px;color:var(--ink-900);margin-top:8px;line-height:1.6;}
+.mai-tip{font-size:14px;color:var(--ink-500);margin-top:2px;}
+.order{
+  margin-top:12px;padding:12px 14px;background:rgba(181,74,58,.07);border-left:3px solid var(--cinnabar);
+}
+.order-k{font-size:11px;letter-spacing:3px;color:var(--cinnabar);margin-bottom:2px;}
+.order-v{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--ink-900);line-height:1.5;}
+
+/* ---------- 小节 ---------- */
+.sec{margin-top:20px;}
+.sec-t{
+  font-family:var(--serif);font-size:15px;font-weight:700;color:var(--ink-900);
+  letter-spacing:2px;padding-left:10px;border-left:3px solid var(--cinnabar);
+  margin-bottom:10px;
+}
+
+/* ---------- 卦画 ---------- */
+.hex{display:flex;flex-direction:column;gap:5px;width:66px;flex:none;}
+.hex .yao{--c:var(--ink-900);display:block;height:7px;background:var(--c);}
+.hex .yao.yin{background:linear-gradient(90deg,var(--c) 0 43%,transparent 43% 57%,var(--c) 57% 100%);}
+.hex .yao.dong{--c:var(--cinnabar);}
+
+/* 幸运物 */
+.lucky{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0 18px;}
+.lucky div{border:1px solid var(--line);background:rgba(255,255,255,.4);padding:10px 12px;}
+.lucky i{display:block;font-style:normal;font-size:11px;letter-spacing:2px;color:var(--ink-300);}
+.lucky b{display:block;font-family:var(--serif);font-size:15px;margin-top:4px;letter-spacing:.5px;color:var(--ink-900);}
+
+/* 三卦：竖排三行（390 宽下三列会挤成一团） */
+.tri{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line);}
+.tri:last-child{border-bottom:none;padding-bottom:2px;}
+.tri.now .n{color:var(--cinnabar-dark);}
+.tri-b{min-width:0;flex:1 1 auto;}
+.tri .k{font-size:11px;letter-spacing:2px;color:var(--ink-300);}
+.tri .n{font-family:var(--serif);font-size:17px;font-weight:700;color:var(--ink-900);letter-spacing:1px;line-height:1.4;}
+.tri .g{font-size:11.5px;color:var(--ink-300);}
+.tri .v{font-size:13.5px;color:var(--ink-500);line-height:1.7;}
+
+/* ---------- 宜忌（竖排两段） ---------- */
+.cmp .box{border:1px solid var(--line);background:rgba(255,255,255,.55);padding:13px 15px;}
+.cmp .box+.box{margin-top:10px;}
+.cmp .box.good{border-left:3px solid var(--green);}
+.cmp .box.warn{border-left:3px solid var(--cinnabar);}
+.cmp .h{font-family:var(--serif);font-size:16px;font-weight:700;letter-spacing:2px;margin-bottom:8px;}
+.cmp .good .h{color:var(--green);}
+.cmp .warn .h{color:var(--cinnabar-dark);}
+.cmp ul{list-style:none;margin:0;padding:0;}
+.cmp li{position:relative;padding-left:14px;font-size:14px;color:var(--ink-700);line-height:1.75;margin-bottom:5px;}
+.cmp li:last-child{margin-bottom:0;}
+.cmp .good li::before{content:'';position:absolute;left:0;top:9px;width:5px;height:5px;background:var(--green);opacity:.6;}
+.cmp .warn li::before{content:'';position:absolute;left:0;top:9px;width:5px;height:5px;background:var(--cinnabar);opacity:.6;}
+
+/* ---------- 命卡 ---------- */
+.mcard{
+  border:1px solid rgba(181,74,58,.42);background:linear-gradient(150deg,var(--paper-warm),var(--paper-cool));
+  padding:22px 18px;text-align:center;position:relative;
+}
+.mcard::before{content:'';position:absolute;inset:6px;border:1px solid rgba(181,74,58,.18);pointer-events:none;}
+.mcard .top{font-size:10px;letter-spacing:5px;color:var(--cinnabar);margin-bottom:12px;}
+.mcard .st{
+  display:inline-block;font-family:var(--serif);font-size:13px;color:var(--cinnabar-dark);
+  letter-spacing:3px;padding:1px 9px;border:1px solid rgba(181,74,58,.3);margin-bottom:9px;
+}
+.mcard .nm{font-family:var(--serif);font-size:26px;font-weight:900;color:var(--ink-900);letter-spacing:2px;line-height:1.3;}
+.mcard .ln{width:40px;height:1px;background:var(--cinnabar);opacity:.5;margin:13px auto;}
+.mcard .bl{font-family:var(--serif);font-size:14px;color:var(--ink-500);line-height:1.85;}
+.mcard .cn{
+  width:44px;height:44px;border:2px solid var(--cinnabar);color:var(--cinnabar);
+  display:flex;align-items:center;justify-content:center;font-family:var(--serif);
+  font-size:20px;font-weight:900;margin:16px auto 0;
+}
+
+/* ---------- 细节折叠 ---------- */
+details{border:1px solid var(--line);background:rgba(255,255,255,.4);margin-top:10px;}
+details summary{
+  list-style:none;cursor:pointer;padding:12px 14px;
+  font-family:var(--serif);font-size:14.5px;font-weight:700;color:var(--ink-800);letter-spacing:1px;
+  display:flex;align-items:center;gap:8px;
+}
+details summary::-webkit-details-marker{display:none;}
+details summary::before{content:'+';font-family:var(--sans);color:var(--cinnabar);width:10px;text-align:center;}
+details[open] summary::before{content:'−';}
+.fold-b{padding:0 14px 14px;font-size:13.5px;color:var(--ink-500);line-height:1.8;}
+.kv{display:flex;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(181,74,58,.12);}
+.kv:last-child{border-bottom:none;}
+.kv b{flex:none;min-width:62px;font-weight:400;color:var(--ink-300);font-size:12.5px;}
+.kv span{color:var(--ink-800);font-family:var(--serif);}
+
+/* ---------- 页脚 ---------- */
+.foot{margin-top:20px;padding-top:14px;border-top:1px solid var(--line);}
+.foot-txt{font-size:11.5px;color:var(--ink-300);line-height:1.9;letter-spacing:.3px;}
+.foot-txt b{color:var(--ink-500);font-weight:400;}
+.seal{
+  display:inline-grid;grid-template-columns:repeat(2,auto);gap:0 3px;
+  border:1px solid var(--cinnabar);color:var(--cinnabar);
+  font-family:var(--serif);font-size:11px;padding:5px 7px;line-height:1.15;margin-top:12px;
+}
+
+/* ---------- 悬浮按钮 ---------- */
+.fab{position:fixed;right:12px;bottom:12px;display:flex;flex-direction:column;gap:7px;z-index:9;}
+.fab button{
+  width:46px;height:46px;padding:0;border:1px solid rgba(181,74,58,.3);
+  background:rgba(245,240,232,.96);color:var(--cinnabar-dark);
+  font-family:var(--serif);font-size:9px;letter-spacing:.5px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  box-shadow:0 2px 10px rgba(13,13,13,.10);
+}
+.fab button:active{background:var(--cinnabar);color:var(--paper);}
+.fab svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.toast{
+  position:fixed;left:50%;bottom:76px;transform:translateX(-50%);
+  max-width:calc(100vw - 40px);padding:8px 13px;font-size:12.5px;
+  color:var(--paper);background:rgba(13,13,13,.92);border-radius:2px;
+  opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:20;
+}
+.toast.show{opacity:1;}
+
+/* ---------- 宽屏：把折页放中间 ---------- */
+@media (min-width:700px){
+  body{padding:32px 20px 40px;}
+  .sheet{box-shadow:0 0 0 1px rgba(181,74,58,.08),0 16px 44px rgba(13,13,13,.06);}
+}
+@media (max-width:360px){
+  body{font-size:14.5px;padding:14px 10px calc(26px + env(safe-area-inset-bottom));}
+  .sheet{padding:20px 14px 16px;}
+  .hd-title{font-size:26px;}
+  .mai-num{font-size:46px;}
+  .hex{width:58px;}
+}
+@media print{
+  body{background:#fff;padding:0;}
+  .sheet{border:none;background:#fff;max-width:none;padding:0;box-shadow:none;}
+  .sheet::before{display:none;}
+  .fab,.toast{display:none !important;}
+  details{border:none;}
+  details summary{display:none;}
+  .fold-b{padding:0;}
+  .sec{page-break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+
+<div class="sheet" id="sheet">
+
+  <header class="hd">
+    <div class="hd-label">麦 门 占 卜 · 今 日 命 卡</div>
+    <h1 class="hd-title" id="benName">—</h1>
+    <div class="hd-gua" id="benGua">—</div>
+    <div class="hd-tags" id="tagLine"></div>
+    <div class="hd-sub" id="benVerdict">—</div>
+    <div class="hd-meta" id="metaLine">—</div>
+  </header>
+
+  <section class="mai">
+    <div class="mai-top">
+      <span class="mai-num" id="maiNum">—</span>
+      <span class="mai-unit">分 / 麦气</span>
+      <span class="mai-grade" id="maiGrade">—</span>
+    </div>
+    <div class="mai-head" id="maiHead">—</div>
+    <div class="mai-tip" id="maiTip">—</div>
+    <div class="order">
+      <div class="order-k">今 日 点 单</div>
+      <div class="order-v" id="maiOrder">—</div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="lucky" id="luckyBox"></div>
+
+    <div class="sec-t">三卦</div>
+    <div id="triList"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-t">今天宜忌</div>
+    <div class="cmp">
+      <div class="box good">
+        <div class="h">宜</div>
+        <ul id="yiList"></ul>
+      </div>
+      <div class="box warn">
+        <div class="h">忌</div>
+        <ul id="jiList"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-t">今日命卡</div>
+    <div class="mcard">
+      <div class="top">麦 门 命 卡</div>
+      <div class="st" id="cardStar">—</div>
+      <div class="nm" id="cardName">—</div>
+      <div class="ln"></div>
+      <div class="bl" id="cardBless">—</div>
+      <div class="cn">麦</div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <details>
+      <summary>卦是怎么来的</summary>
+      <div class="fold-b">
+        <div class="kv"><b>上卦</b><span id="qUp">—</span></div>
+        <div class="kv"><b>下卦</b><span id="qDown">—</span></div>
+        <div class="kv"><b>动爻</b><span id="qDong">—</span></div>
+        <div class="kv"><b>你这边</b><span id="tiName">—</span></div>
+        <div class="kv"><b>这顿麦</b><span id="tiYong">—</span></div>
+        <div class="kv"><b>谁占上风</b><span id="tiRel">—</span></div>
+        <div class="kv"><b>外应</b><span id="waiLine">—</span></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="foot">
+    <div class="foot-txt">
+      以<b>梅花易数时间卦</b>取象：年月日时起卦，看的是此刻这点气，不碰生辰、不问住址。<br>
+      卦象五行都是老民俗里的东西，图个乐子；不作医疗、投资、择业、婚恋的依据。<br>
+      <b>署名 墨喵</b> · <span id="genAt">—</span>
+    </div>
+    <div class="seal"><span>墨</span><span>喵</span><span>之</span><span>印</span></div>
+  </div>
+
+</div>
+
+<div class="fab">
+  <button id="btnSave" type="button" title="另存为网页文件（单文件，可离线打开）">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 0 3.5-3.5M12 13 8.5 9.5M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+    <span>存网页</span>
+  </button>
+  <button id="btnPrint" type="button" title="打印或存为 PDF">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg>
+    <span>存 PDF</span>
+  </button>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+var D = {"meta": {"title": "麦门占卜 · 程序员麦占", "generated_at": "2026-10-20 09:48", "date": "2026-10-20", "hour": "09:48", "author": "墨喵", "method": "梅花易数时间卦（零输入，以当前时辰起卦）"}, "subject": {"lang": "typescript", "commits": 16, "bugs": 1, "overtime": false}, "meihua": {"sum3": 2056, "sum4": 2062, "shi": 6, "up": 8, "down": 6, "up2": 4, "down2": 6, "hu_up": 8, "hu_down": 4, "ben_name": "地水师", "ben_gua": "坤上坎", "ben_symbol": "☷☵", "ben_verdict": "人多事也杂，宜分好工各点各的，忌一锅乱炖", "bian_name": "雷水解", "bian_gua": "震上坎", "bian_symbol": "☳☵", "bian_verdict": "结开了，宜把拖着的事办掉，忌继续攒", "hu_name": "地雷复", "hu_gua": "坤上震", "hu_symbol": "☷☳", "hu_verdict": "缓过来了，宜早睡补觉，忌熬夜硬扛", "dong_yao": 4, "yixiang": "人多事也杂，宜分好工各点各的，忌一锅乱炖", "ben_lines": [0, 1, 0, 0, 0, 0], "bian_lines": [0, 1, 0, 1, 0, 0], "hu_lines": [1, 0, 0, 0, 0, 0], "ben_element": "土", "bian_element": "水"}, "tiyong": {"ti_name": "坎", "ti_element": "水", "yong_name": "坤", "yong_element": "土", "yong_is_upper": true, "relation": "用克体", "verdict": "这顿有点压你，清淡为主，别加辣。", "luck": 44}, "wai_ying": ["今天提交得挺勤，状态一路往上", "错漏 1 处，交之前多看一眼"], "lang_wuxing": {"element": "火", "desc": "给火加了个炉膛，烧得旺还不乱窜"}, "card": {"name": "板烧鸡腿堡", "star": "不炸主义者", "blessing": "不油炸也香，今天走温和路线，别硬刚"}, "score": 61, "mai": {"grade": "平常", "grade_key": "plain", "headline": "今天不功不过，吃饱最要紧", "one_line": "这顿有点压你，清淡为主，别加辣。", "tip": "小错先记着，吃完再改"}, "yiji": {"yi": ["分好工各点各的", "把拖着的事办掉", "加个小食，今天提交了 16 次", "点一份吉士汉堡配可乐", "拉个人拼 1+1 随心配，比单点划算"], "ji": ["一锅乱炖", "继续攒", "硬着头皮点最辣的", "在店里跟人抢座位", "带着没改完的错去吃饭"]}, "tags": ["人多事杂", "分好工", "别一锅炖"], "profile": {"up": {"name": "坤", "xiang": "地", "nature": "承载、厚、什么都接得住", "element": "土"}, "down": {"name": "坎", "xiang": "水", "nature": "险、绕、藏得深", "element": "水"}}, "lucky": {"color": "红 / 橙", "num": "2 和 7", "dir": "南边", "hour": "11–15 点", "item": "麦辣鸡腿堡"}, "yao_hint": {"pos": 4, "stage": "到了门外", "stage_desc": "事到临头，得问一句", "yin_yang": "阴", "text": "阴爻动，宜先守着，别抢出头"}, "three": {"do": "分好工各点各的", "dont": "一锅乱炖", "note": "这顿有点压你，清淡为主"}};
+
+function $(id){ return document.getElementById(id); }
+function setText(id, v){
+  var el = $(id);
+  if (el) el.textContent = (v === undefined || v === null) ? "—" : v;
+}
+function esc(s){
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function hexHTML(lines, dong){
+  var h = "";
+  for (var i = 5; i >= 0; i--){
+    var yang = lines[i] === 1;
+    h += '<i class="yao ' + (yang ? "yang" : "yin") + (dong === i + 1 ? " dong" : "") + '"></i>';
+  }
+  return h;
+}
+
+(function(){
+  var m = D.meihua, ty = D.tiyong, s = D.subject || {};
+  var meta = D.meta || {};
+  var wx = (D.lang_wuxing && D.lang_wuxing.element) || "土";
+  var wxDesc = (D.lang_wuxing && D.lang_wuxing.desc) || "";
+  var sc = D.score || 0;
+  var mai = D.mai || null;
+
+  /* 卷首 */
+  setText("benName", "《" + m.ben_name + "》");
+  setText("benGua", m.ben_gua + " · 动第 " + m.dong_yao + " 爻");
+  setText("benVerdict", m.ben_verdict);
+  setText("metaLine",
+    (meta.date || "") + " " + (meta.hour || "") + "　|　" +
+    (s.lang || "python") + " · 属" + wx + "　|　" +
+    "提交 " + (s.commits || 0) + " 次 · 出错 " + (s.bugs || 0) + " 处" + (s.overtime ? " · 加班" : ""));
+
+  /* 麦气 */
+  var grades = [[82,"上吉","今天麦气很足，点什么都不会错"],[72,"中吉","今天挺顺，按老规矩点就行"],
+                [62,"小吉","今天不差，稳着来"],[50,"平常","今天不功不过，吃饱最要紧"],
+                [0,"缓一缓","今天差点意思，清淡为主"]];
+  var grade = "平常", head = "今天不功不过，吃饱最要紧";
+  for (var gi = 0; gi < grades.length; gi++){
+    if (sc >= grades[gi][0]){ grade = grades[gi][1]; head = grades[gi][2]; break; }
+  }
+  var tip;
+  if (mai && mai.tip) tip = mai.tip;
+  else if (s.overtime) tip = "活是干不完的，先吃饭";
+  else if ((s.bugs || 0) >= 3) tip = "错已经出了，别拿饭赌气";
+  else if ((s.bugs || 0) > 0) tip = "小错先记着，吃完再改";
+  else if ((s.commits || 0) >= 15) tip = "今天干得够多，加个甜的犒劳下";
+  else tip = "别在工位上凑合，站起来去吃";
+
+  setText("maiNum", sc);
+  setText("maiGrade", (mai && mai.grade) || grade);
+  setText("maiHead", (mai && mai.headline) || head);
+  setText("maiTip", tip);
+
+  /* 点单建议：取宜忌里那条「宜点一份…」 */
+  var yj = D.yiji || {yi: [], ji: []};
+  var order = "";
+  (yj.yi || []).forEach(function(x){
+    if (!order && x.indexOf("点一份") >= 0) order = x.replace(/^宜/, "");
+  });
+  if (!order){
+    var MAP = {"金":"薯条配麦乐鸡","木":"板烧鸡腿堡配鲜蔬杯","水":"麦旋风配可乐",
+               "火":"麦辣鸡腿堡","土":"巨无霸或吉士汉堡"};
+    order = "点一份" + (MAP[wx] || "吉士汉堡");
+  }
+  setText("maiOrder", order.replace(/^点一份/, ""));
+
+  /* 卷首关键词 */
+  var tags = D.tags || [];
+  $("tagLine").innerHTML = tags.map(function(t){ return "<span>" + t + "</span>"; }).join("");
+
+  /* 今日幸运物 */
+  var lk = D.lucky || null;
+  if (lk){
+    $("luckyBox").innerHTML = [
+      ["幸运色", lk.color], ["幸运数字", lk.num],
+      ["好方位", lk.dir], ["好时段", lk.hour]
+    ].map(function(x){ return "<div><i>" + x[0] + "</i><b>" + x[1] + "</b></div>"; }).join("");
+  } else {
+    $("luckyBox").style.display = "none";
+  }
+
+  /* 三卦竖排 */
+  var rows = [
+    ["本卦 · 你的主食", m.ben_name, m.ben_gua, m.ben_verdict, true, m.ben_lines, m.dong_yao],
+    ["过程 · 吃到一半", m.hu_name, m.hu_gua, m.hu_verdict, false, m.hu_lines, 0],
+    ["收尾 · 吃完之后", m.bian_name, m.bian_gua, m.bian_verdict, false, m.bian_lines, 0]
+  ];
+  $("triList").innerHTML = rows.map(function(r){
+    return '<div class="tri' + (r[4] ? " now" : "") + '">' +
+      '<div class="hex">' + hexHTML(r[5], r[6]) + '</div>' +
+      '<div class="tri-b"><div class="k">' + r[0] + '</div>' +
+      '<div class="n">' + r[1] + '</div>' +
+      '<div class="g">' + (r[2] === r[1] ? '纯卦' : r[2]) + '</div>' +
+      '<div class="v">' + esc(r[3]) + '</div></div></div>';
+  }).join("");
+
+  /* 宜忌 */
+  $("yiList").innerHTML = (yj.yi || []).map(function(x){ return "<li>" + esc(x) + "</li>"; }).join("");
+  $("jiList").innerHTML = (yj.ji || []).map(function(x){ return "<li>" + esc(x) + "</li>"; }).join("");
+
+  /* 命卡 */
+  setText("cardStar", D.card.star);
+  setText("cardName", D.card.name);
+  setText("cardBless", D.card.blessing);
+
+  /* 折叠细节 */
+  setText("qUp", m.sum3 + " ÷8 余 " + (m.sum3 % 8 || 8) + " → " + m.ben_gua + "（上卦）");
+  setText("qDown", m.sum4 + " ÷8 余 " + (m.sum4 % 8 || 8) + "（下卦）");
+  setText("qDong", m.sum4 + " ÷6 余 " + (m.sum4 % 6 || 6) + " → 第 " + m.dong_yao + " 爻");
+  setText("tiName", ty.ti_name + " · 属" + ty.ti_element);
+  setText("tiYong", ty.yong_name + " · 属" + ty.yong_element);
+  setText("tiRel", ty.relation + "（卦气 " + ty.luck + "）");
+  var wai = D.wai_ying || [];
+  setText("waiLine", wai.length ? wai.join("；") : "无外应，纯凭天时");
+
+  setText("genAt", meta.generated_at || "");
+  document.title = "今日命卡 · 《" + m.ben_name + "》";
+
+  /* 存网页 / 存 PDF */
+  var toastEl = $("toast"), timer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(timer);
+    timer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2400);
+  }
+  $("btnSave").addEventListener("click", function(){
+    try{
+      var html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([html], {type: "text/html;charset=utf-8"}));
+      a.download = (document.title || "今日命卡") + ".html";
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ a.remove(); }, 1500);
+      toast("已存成网页，双击就能打开");
+    }catch(e){ toast("没存上，用浏览器菜单里的「保存网页」吧"); }
+  });
+  $("btnPrint").addEventListener("click", function(){
+    toast("打印面板里选「存为 PDF」就行");
+    setTimeout(function(){ window.print(); }, 300);
+  });
+})();
+</script>
+</body>
+</html>
