@@ -345,6 +345,8 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
 }
 .fld input::-webkit-outer-spin-button,
 .fld input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+/* 长文本输入（Token / 中转地址 / 地点）：别挤成 96px 的小方框，否则填了就看不见 */
+.fld input.long{width:auto;flex:1;min-width:0;text-align:left;font-size:13.5px;}
 /* 开关：原来轨道是 0.6 白 + 极浅描边，在白底上几乎看不见，只看得见那个灰方块 */
 .fld-sw{
   display:inline-flex;flex:none;width:54px;height:30px;position:relative;cursor:pointer;
@@ -707,16 +709,41 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
       <div>点一个 Star，麦门谢谢香火 ⭐</div>
     </div>
 
-    <div class="block">
-      <div class="bt">能看到我自己的吗</div>
+    <!-- LIVE-BLOCK-START 小工具构建时整块替换为离线提示 -->
+    <div class="block" id="liveBlock">
+      <div class="bt">接入我自己的账号</div>
       <div class="about">
-        这一版用的是<b>公开数据</b>（什么时候抓的写在页脚），不碰你的账号，
-        所以不用登录，也不用填任何东西。
+        填一次，就能查<b>你自己的积分</b>、<b>常去那家店</b>、<b>能领的券</b>，卦也跟着按你的实际门店算。
         <br><br>
-        想看<b>你自己的积分</b>和<b>常去的那家店</b>，在 WorkBuddy 里装这个技能，
-        用麦当劳账号申请一次 MCP 权限就行。
+        Token 只存在这台设备的浏览器里，不会上传到任何地方。去
+        <a id="tokenLink" href="https://open.mcd.cn/mcp" target="_blank" rel="noopener">open.mcd.cn/mcp</a>
+        手机号登录后进控制台领取，免费、只读。
       </div>
+      <div class="form">
+        <div class="fld">
+          <label for="inToken">MCP Token</label>
+          <input id="inToken" class="long" type="password" autocomplete="off" placeholder="Bearer 后面那一串">
+        </div>
+        <div class="fld">
+          <label for="inProxy">中转地址</label>
+          <input id="inProxy" class="long" type="url" autocomplete="off" placeholder="https://mcd-proxy.你的子域.workers.dev">
+        </div>
+        <div class="fld">
+          <label for="inCity">城市</label>
+          <input id="inCity" class="long" type="text" autocomplete="off" value="成都">
+        </div>
+        <div class="fld">
+          <label for="inKeyword">地标</label>
+          <input id="inKeyword" class="long" type="text" autocomplete="off" value="春熙路">
+        </div>
+      </div>
+      <button class="btn" id="btnLive">查 我 的 实 时 数 据</button>
+      <p class="note" id="liveHint">
+        麦当劳这个接口不允许浏览器直连（跨域被拦），所以需要一个中转。
+        中转只要部署一次：仓库里的 <b>tools/mcp-proxy-worker.js</b>，Cloudflare Worker 免费版即可。
+      </p>
     </div>
+    <!-- LIVE-BLOCK-END -->
 
     <div class="block">
       <div class="bt">关于这个玩意儿</div>
@@ -780,6 +807,7 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
 <div class="toast" id="toast"></div>
 
 <script src="mcd_data.js"></script>
+<script src="mcd_live.js"></script>
 <script>
 const GUA64 = {
   "1,1":["乾为天","天时正好，宜一口气把活儿干完，忌嘴上一句「马上就好」"],
@@ -1373,9 +1401,11 @@ function renderToday(){
 
   /* 数据来源说明 */
   if (realOk()){
-    $("srcLine").innerHTML = (REAL.demo ? "示例数据" : "麦当劳数据")
+    const tag = REAL.live ? "你自己的数据" : (REAL.demo ? "示例数据" : "麦当劳数据");
+    const when = REAL.live ? " · 刚查的 " : " · 抓取于 ";
+    $("srcLine").innerHTML = tag
       + (REAL.city ? "（" + REAL.city + "）" : "")
-      + " · 抓取于 " + (REAL.fetched_at || "").slice(5, 16);
+      + when + (REAL.fetched_at || "").slice(5, 16);
   } else {
     $("srcLine").innerHTML = "这会儿没读到数据 · 卦照常算";
   }
@@ -1473,9 +1503,10 @@ function renderStore(){
 
   const st = nearest();
   const ss = REAL.stores || [];
-  /* 说清楚这是哪座城市的快照：别让人以为是自己楼下 */
+  /* 说清楚这是哪座城市、什么时候的数据：别让人以为是自己楼下 */
   $("storeSrc").textContent = "附近门店 · " + (REAL.city || "示例")
-    + "（" + (REAL.keyword || "地标") + "一带的抓取快照）";
+    + "（" + (REAL.keyword || "地标") + "一带"
+    + (REAL.live ? "，刚查的实时数据）" : "的抓取快照）");
   let html = "";
   if (st){
     html += '<div class="store-hero">' +
@@ -1514,7 +1545,7 @@ function renderStore(){
   const pt = REAL.points || {};
   const masked = pt.available == null && pt.accumulative == null;
   $("pointBox").innerHTML = masked
-    ? '<div class="full"><b>这里不显示个人积分</b><p>用的是公开数据，不碰你的账号。想看自己的，在 WorkBuddy 里用技能版。</p></div>'
+    ? '<div class="full"><b>这里不显示个人积分</b><p>现在用的是公开数据，不碰你的账号。想看自己的，去「我的」页填一次 Token。</p></div>'
     : "<div><small>可用积分</small><b>" + (pt.available != null ? pt.available : "—") + "</b></div>" +
       "<div><small>累计积分</small><b>" + (pt.accumulative != null ? pt.accumulative : "—") + "</b></div>";
 
@@ -1742,10 +1773,59 @@ function toast(msg, ms){
 }
 
 /* ── 启动 ── */
+/* ── 接我自己的账号：填 Token + 中转，查实时门店/券/积分 ── */
+const LIVE_KEY = "maimen.live";
+function liveLoad(){
+  try { return JSON.parse(localStorage.getItem(LIVE_KEY) || "{}") || {}; } catch (e) { return {}; }
+}
+function liveSave(o){
+  try { localStorage.setItem(LIVE_KEY, JSON.stringify(o)); } catch (e) { /* 小工具里可能不可用 */ }
+}
+function initLive(){
+  if (!$("btnLive")) return;
+  const saved = liveLoad();
+  if (saved.token) $("inToken").value = saved.token;
+  if (saved.proxy) $("inProxy").value = saved.proxy;
+  if (saved.city) $("inCity").value = saved.city;
+  if (saved.keyword) $("inKeyword").value = saved.keyword;
+
+  $("btnLive").addEventListener("click", function(){
+    const token = ($("inToken").value || "").trim();
+    const proxy = ($("inProxy").value || "").trim();
+    const city = ($("inCity").value || "").trim();
+    const keyword = ($("inKeyword").value || "").trim();
+    if (!token) { toast("先填 Token"); return; }
+    if (!proxy) { toast("先填中转地址"); return; }
+    if (!window.MCD_LIVE) { toast("实时模块没加载，刷新试试"); return; }
+
+    liveSave({ token: token, proxy: proxy, city: city, keyword: keyword });
+    const btn = this;
+    btn.disabled = true;
+    setText("liveHint", "正在查，几秒钟…");
+    window.MCD_LIVE.consult(proxy, token, city, keyword).then(function(res){
+      btn.disabled = false;
+      if (!res.ok){
+        setText("liveHint", "没查到：" + (res.reason || "未知原因") + "。Token 是否过期？中转地址是否对？");
+        toast("没查到，检查 Token 和中转");
+        return;
+      }
+      REAL = res;
+      compute();
+      renderToday();
+      renderGua();
+      renderStore();
+      setText("liveHint", "已切到你自己的数据 · " + (res.fetched_at || "") + "（Token 已存在本机，下次打开还在）");
+      toast("查到了，卦按你的店重新算");
+      goView("store");
+    });
+  });
+}
+
 let START_NOW = new Date();
 (function boot(){
   initTabs();
   initForm();
+  initLive();
   $("btnCard").addEventListener("click", openCard);
   $("sheetClose").addEventListener("click", function(){ $("sheet").classList.remove("on"); });
   $("sheet").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("on"); });

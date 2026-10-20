@@ -104,6 +104,19 @@ function saveImage(){
 
 /* ── Toast ── */'''
 
+# 小工具版：容器禁联网（fetch/XHR 全禁），实时接入整块换成离线说明
+MINITOOL_LIVE_BLOCK = '''<!-- 小工具版：容器禁联网，实时接入改为离线说明 -->
+    <div class="block">
+      <div class="bt">想看自己的积分？</div>
+      <div class="about">
+        小工具是<b>离线包</b>，容器不允许联网，所以这里只能用抓好的公开数据
+        （页脚写着抓取时间，服务端每 3 小时刷新一次）。
+        <br><br>
+        想看<b>你自己的门店、券和积分</b>，用同一个项目的<b>网页版</b>：
+        在那儿填一次 Token 就能查到，卦也跟着按你的实际门店重算。
+      </div>
+    </div>'''
+
 # ES2018+ 语法扫描（直接交付 JS 不得超出 ES2017）
 ES2018_PATTERNS = [
     (r"\?\?", "空值合并 ??"),
@@ -143,6 +156,13 @@ def build():
 
     # 4.5) 资源引用统一相对路径 ./ 前缀
     html = html.replace('src="mcd_data.js"', 'src="./mcd_data.js"')
+
+    # 4.6) 实时接入降级：容器禁联网，mcd_live.js 不引入，整块 UI 换成离线说明
+    html = re.sub(r'<script src="\.?/?mcd_live\.js"></script>\s*', "", html)
+    html = re.sub(r"<!-- LIVE-BLOCK-START.*?<!-- LIVE-BLOCK-END -->",
+                  MINITOOL_LIVE_BLOCK, html, flags=re.S)
+    if "liveBlock" in html or "mcd_live.js" in html:
+        sys.exit("实时接入块没替换干净")
 
     # 4.6) 外链降级：容器禁打开外链，Star 链接去掉 href/target，点击由 JS 提示项目名
     html = re.sub(
