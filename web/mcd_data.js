@@ -3,9 +3,9 @@ window.MCD_REAL = {
  "ok": true,
  "city": "成都",
  "keyword": "春熙路",
- "fetched_at": "2026-10-20 09:52:27",
+ "fetched_at": "2026-10-20 21:05:19",
  "now": {
-  "datetime": "2026-10-20 09:52:27",
+  "datetime": "2026-10-20 21:05:19",
   "date": "2026-10-20",
   "weekday": "TUESDAY"
  },
@@ -87,12 +87,12 @@ window.MCD_REAL = {
   {
    "date": "2026年10月20日",
    "tag": "今日",
-   "title": "超值𝟗.𝟗元早餐两件套陪你开工啦😋"
+   "title": "麦当劳 X PEACEMINUSONE"
   },
   {
    "date": "2026年10月20日",
    "tag": "今日",
-   "title": "麦当劳 X PEACEMINUSONE"
+   "title": "超值𝟗.𝟗元早餐两件套陪你开工啦😋"
   },
   {
    "date": "2026年10月20日",

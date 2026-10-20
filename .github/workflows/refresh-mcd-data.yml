@@ -1,0 +1,64 @@
+name: refresh-mcd-data
+
+# 麦当劳门店/券快照自动刷新
+#
+# 为什么要放在服务端跑：MCP 端点（mcp.mcd.cn）不回 Access-Control-Allow-Origin，
+# 浏览器端即使拿到 Token 也发不出请求（CORS 预检 403、200 响应无 CORS 头）；
+# 小红书小工具容器更是直接禁用 fetch/XHR。所以只有服务端能拿到实时数据，
+# 抓到后写成静态快照，页面（含小工具离线包）再读同一份文件。
+#
+# Token 放仓库 secret：Settings → Secrets and variables → Actions → New repository secret
+# 名称 MCD_MCP_TOKEN，值就是 open.mcd.cn/mcp 控制台里的 Token。仓库里永远不落明文。
+
+on:
+  schedule:
+    # 每 3 小时一次（UTC），避开整点高峰
+    - cron: "20 */3 * * *"
+  workflow_dispatch:          # 也支持手动点一次
+
+permissions:
+  contents: write             # 需要提交新快照
+
+concurrency:
+  group: refresh-mcd-data
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 抓取只读门店与券
+        env:
+          MCD_MCP_TOKEN: ${{ secrets.MCD_MCP_TOKEN }}
+        run: |
+          if [ -z "${MCD_MCP_TOKEN}" ]; then
+            echo "::warning::未配置 secret MCD_MCP_TOKEN，本次跳过（页面会继续用旧快照）"
+            exit 0
+          fi
+          python3 scripts/fetch_real.py --city 成都 --keyword 春熙路
+
+      - name: 数据无变化则跳过提交
+        id: diff
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 提交并推送
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "maimen-data-bot"
+          git config user.email "maimen-data-bot@users.noreply.github.com"
+          git add web/mcd_data.js assets/mcd_data.js miniprogram/data/mcd_real.js
+          git commit -m "chore(data): 自动刷新门店与券快照（$(date -u '+%m-%d %H:%M UTC')）"
+          git push

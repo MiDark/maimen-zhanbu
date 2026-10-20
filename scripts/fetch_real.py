@@ -73,6 +73,17 @@ def main():
         f.write_text(js, encoding="utf-8")
         print("written ->", rel)
 
+    # 小程序 / 小工具离线包用的 CommonJS 版本（同一份数据，格式不同）
+    mp = ROOT / "miniprogram/data/mcd_real.js"
+    if mp.parent.is_dir():
+        mp.write_text(
+            "/* 麦当劳开放平台只读快照 —— 由 scripts/fetch_real.py 生成，含抓取时间，"
+            "请勿当作实时数据；账户数据已脱敏 */\n"
+            "module.exports = " + json.dumps(payload, ensure_ascii=False, indent=1) + ";\n",
+            encoding="utf-8",
+        )
+        print("written -> miniprogram/data/mcd_real.js")
+
     if a.out:
         Path(a.out).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
