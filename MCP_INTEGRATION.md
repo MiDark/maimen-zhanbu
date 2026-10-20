@@ -123,6 +123,15 @@ FAQ 原文：「能不能请求我自己的服务端接口？网页不能通过 
 结论：小工具里「填 Token 查实时」物理上做不到，也**不做假的输入框**。小工具用快照，
 并在「我的」页如实写明为什么。
 
+**3. 小工具也没有「打开网页」和「复制链接」。** 同一份文档禁了 `window.open`、
+`target="_blank"`、跳转站外 URL、`<iframe>`，也禁了 `navigator.clipboard` /
+`execCommand('copy')`；API 清单（§3.2「列出的即为全部可用 JS API」）里没有任何
+`setClipboardData` 一类能力。所以「点按钮跳网页」「点按钮复制地址」都不可实现，
+只能：① 页内二维码（另一台手机扫）；② `writeTempFile` + `saveImageToPhotosAlbum`
+存二维码到相册，再用微信「扫一扫 → 相册」识别；③ 展示可选中文本的地址；
+④ 9.49+ 用 `interactionOpenApi` 把地址作为评论草稿带到评论区。
+实现见 `scripts/build_minitool.py` 的 `MINITOOL_LIVE_BLOCK`，二维码由 `scripts/make_qr.py` 生成。
+
 技能里的数据流是这样闭合的：连接器调工具 → Agent 把结果按固定结构写成 `real.json`
 （格式见 `skill/SKILL.md` 第 1.5 步）→ `demo_offline.py --real real.json` 渲染命卡。
 **没有 `real.json` 就退回纯离线**，不会编数据。
