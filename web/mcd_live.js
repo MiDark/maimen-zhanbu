@@ -5,8 +5,9 @@
  *   只调查询类工具，绝不触发下单 / 领券 / 抽奖等任何写操作。
  *
  * 为什么不能直连 mcp.mcd.cn：该端点不返回 Access-Control-Allow-Origin，
- * 浏览器 fetch 必被拦。所以请求先打到自建中转（tools/mcp-proxy-worker.js），
- * 由中转补 CORS 再转发。没有中转地址时 consult() 直接返回 {ok:false}。
+ * 浏览器 fetch 必被拦。所以请求先打到中转（server/server.js，已部署在
+ * WorkBuddy 应用托管上），由中转补 CORS 再转发。中转里内置了一份只读 Token，
+ * 所以页面不填 Token 也能直接查；填了自己的 Token 就用填的那份覆盖。
  *
  * Token 只存在本机浏览器（localStorage），由用户自己填；页面不会把 Token
  * 发给除中转以外的任何地方。
@@ -16,6 +17,9 @@
   "use strict";
 
   var PROTOCOL = "2024-11-05";
+
+  /* 站点自带中转（server/server.js 部署产物）。填自己的中转可整体覆盖。 */
+  var DEFAULT_PROXY = "https://maimen-mcp-proxy.app.workbuddy.host/mcp?sharecode=W3MDNRGPQK";
 
   /* 与 Python 端 READONLY_TOOLS 一致：只允许这些查询工具 */
   var READONLY_TOOLS = [
@@ -28,18 +32,26 @@
   function requestRaw(proxyUrl, token, payload, timeoutMs) {
     var ctrl = typeof AbortController === "function" ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, timeoutMs || 20000);
+    var headers = {
+      "Content-Type": "application/json",
+      "MCP-Protocol-Version": PROTOCOL
+    };
+    /* 空 Token 不发头：中转会用自己的内置只读 Token */
+    if (token) headers["x-mcd-token"] = token;
     return fetch(proxyUrl, {
       method: "POST",
       signal: ctrl ? ctrl.signal : undefined,
-      headers: {
-        "Content-Type": "application/json",
-        "x-mcd-token": token,
-        "MCP-Protocol-Version": PROTOCOL
-      },
+      headers: headers,
       body: JSON.stringify(payload)
     }).then(function (res) {
       clearTimeout(timer);
-      if (res.status >= 400) throw new Error("中转/上游 HTTP " + res.status);
+      if (res.status >= 400) {
+        return res.text().then(function (t) {
+          var msg = "";
+          try { msg = (JSON.parse(t) || {}).error || ""; } catch (e) { msg = String(t || "").slice(0, 60); }
+          throw new Error("HTTP " + res.status + (msg ? " · " + msg : ""));
+        }, function () { throw new Error("中转/上游 HTTP " + res.status); });
+      }
       return res.text();
     }, function (err) {
       clearTimeout(timer);
@@ -222,26 +234,26 @@
    *   { ok, city, keyword, fetched_at, live, now, points, stores, coupons, campaigns }
    */
   function consult(proxyUrl, token, city, keyword) {
-    if (!proxyUrl) return Promise.resolve({ ok: false, reason: "未填写中转地址" });
-    if (!token) return Promise.resolve({ ok: false, reason: "未填写 Token" });
+    var proxy = proxyUrl || DEFAULT_PROXY;
+    if (!proxy) return Promise.resolve({ ok: false, reason: "未填写中转地址" });
 
     var out = { ok: false, demo: false, live: true, city: city || "", keyword: keyword || "" };
     var storeArgs = { beType: 1, searchType: 2 };
     if (keyword) storeArgs.keyword = keyword;
     if (city) storeArgs.city = city;
 
-    return callRetry(proxyUrl, token, "now-time-info").then(function (t) {
+    return callRetry(proxy, token, "now-time-info").then(function (t) {
       out.now = nowFrom(t);
-      return callRetry(proxyUrl, token, "query-my-account");
+      return callRetry(proxy, token, "query-my-account");
     }).then(function (t) {
       out.points = pointsFrom(t);
-      return (keyword || city) ? callRetry(proxyUrl, token, "query-nearby-stores", storeArgs) : Promise.resolve("");
+      return (keyword || city) ? callRetry(proxy, token, "query-nearby-stores", storeArgs) : Promise.resolve("");
     }).then(function (t) {
       out.stores = storesFrom(t);
-      return callRetry(proxyUrl, token, "available-coupons");
+      return callRetry(proxy, token, "available-coupons");
     }).then(function (t) {
       out.coupons = parseCoupons(t).slice(0, 8);
-      return callRetry(proxyUrl, token, "campaign-calendar");
+      return callRetry(proxy, token, "campaign-calendar");
     }).then(function (t) {
       out.campaigns = parseCampaigns(t).slice(0, 6);
       var n = 0;
@@ -266,6 +278,7 @@
   }
 
   global.MCD_LIVE = {
+    DEFAULT_PROXY: DEFAULT_PROXY,
     READONLY_TOOLS: READONLY_TOOLS,
     consult: consult,
     callTool: callTool,

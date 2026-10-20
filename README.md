@@ -1,6 +1,6 @@
 # 麦门占卜（maimen-zhanbu）
 
-**在线体验 → <https://midark.github.io/maimen-zhanbu/>**（纯前端，零输入，不用 Token）
+**在线体验 → <https://midark.github.io/maimen-zhanbu/>**（纯前端，零输入，不用填 Token；打开即查真实门店/券/活动）
 
 > **麦门占卜 · 程序员麦占** —— 卦是正经梅花易数时间卦，话全说人话。点一下按钮，三秒告诉你**今天该点哪一份**：
 > 以**当前时辰起卦**（零输入，不碰生辰八字），可选用今日 commit / bug / 加班作外应，
@@ -68,7 +68,7 @@
 | 形态 | 路径 | 适合 | 状态 | 能不能查实时 |
 |---|---|---|---|---|
 | **技能版（参赛主体）** | `skill/SKILL.md` | WorkBuddy 对话触发，产出**本地可打开的网页命卡** | 可用 | 能：连接器直连，用你自己的 Token |
-| **网页体验版** | `web/index.html` | 浏览器/手机直接打开 | **已上线**：<https://midark.github.io/maimen-zhanbu/> | 能：在「我的」页填 Token + 中转地址 |
+| **网页体验版** | `web/index.html` | 浏览器/手机直接打开 | **已上线**：<https://midark.github.io/maimen-zhanbu/> | 能：**开页即实时**（站点自带只读中转），也可填自己的 Token |
 | **小红书小工具版** | `minitool/` | 离线 H5 zip，上传创服平台的小工具 | 产物就绪，待上传 | 不能：容器禁联网，用服务端定时刷新的快照 |
 
 > **`miniprogram/` 是什么？** 最早按小程序风格（`.xhsml`/`app.json`）写的原型，留着参考，
@@ -76,9 +76,11 @@
 
 > **为什么网页版查实时需要一个中转？**
 > `mcp.mcd.cn` 不返回任何 `Access-Control-Allow-Origin` 头（OPTIONS 预检直接 403），
-> 浏览器端即使拿到 Token 也发不出请求。中转是 `tools/mcp-proxy-worker.js`
-> ——一个单文件 Cloudflare Worker，部署一次即可（免费额度足够），Token 由浏览器
-> 透传、Worker 不落库。不填中转就用页面内置的自动刷新快照，功能照常。
+> 浏览器端即使拿到 Token 也发不出请求。所以配了 `server/server.js`——一个零依赖
+> Node 单文件服务，已用 WorkBuddy 应用托管部署在
+> `https://maimen-mcp-proxy.app.workbuddy.host`，网页打开自动查真实门店 / 券 / 活动。
+> 服务端只放行 `tools/call` 的**只读白名单**（下单 / 领券 / 抽奖一律 403）、只转发
+> `mcp.mcd.cn`、单 IP 限流，内置 Token 不写日志。
 >
 > **为什么小工具版不能查实时？**
 > 小红书小工具是离线 H5 容器，官方文档 §4.2 明确禁用 `fetch` / `XMLHttpRequest`，
@@ -91,18 +93,23 @@
 | 环节 | 怎么更新 |
 |---|---|
 | 仓库里的快照（`web/mcd_data.js` 等三份） | `.github/workflows/refresh-mcd-data.yml` 每 3 小时用仓库 secret `MCD_MCP_TOKEN` 自动抓一次 |
-| 网页版 | 快照一提交，Pages 自动生效（页脚显示抓取时间） |
+| 网页版默认数据 | **开页自动实时查一次**（走站点自带中转）；查不到才退回快照，页脚显示抓取时间 |
 | 小工具包 | 每次重新打包时带上当时最新的快照；包内是离线的，不会自己变新 |
-| 你自己填了 Token 的话 | 点「查我的实时数据」当场查，不依赖快照 |
+| 你自己填了 Token 的话 | 点「查我的实时数据」用**你的账号**查（积分、我的券），不依赖快照 |
 
-### 部署中转（5 分钟，只有想用网页版查实时才需要）
+### 服务端中转（已部署，自建也可）
 
-1. 打开 <https://workers.cloudflare.com> → Create Worker
-2. 把 `tools/mcp-proxy-worker.js` 全文粘进去 → Deploy
-3. 复制得到的 `https://mcd-proxy.<你的子域>.workers.dev`，填进网页版「我的」页的「中转地址」
-4. 想只让自己那个页面能用：Worker 环境变量加 `ALLOW_ORIGIN=https://midark.github.io`
+线上地址：`https://maimen-mcp-proxy.app.workbuddy.host/mcp?sharecode=W3MDNRGPQK`（已写进 `web/mcd_live.js` 的 `DEFAULT_PROXY`）。
 
-不想部署也完全能用：不填中转就走自动刷新的快照，卦、点单、宜忌一切照常。
+自己再搭一份：
+
+```bash
+cd server && cp config.example.json config.json   # 填 token，config.json 不入库
+PORT=3000 node server.js
+```
+
+备选：`tools/mcp-proxy-worker.js`（Cloudflare Worker 单文件版），只做透传、不带 Token，
+需要浏览器侧自带 Token。
 
 ## 特性
 
@@ -173,8 +180,11 @@ scripts/fetch_real.py       抓一次只读数据 → web/mcd_data.js 快照（�
 scripts/demo_offline.py     离线命卡生成（拉 Star 关键）
 assets/ming_card.html       单文件命卡模板（命书折页，宣纸朱红）
 assets/avatar-512.png       技能头像（512×512，麦当劳红黄；build/make_avatar.py 生成）
-web/index.html              纯前端单页应用（今日/卦象/门店/我的，无 Token）
-web/mcd_data.js             真实数据快照（脱敏，可安全提交）
+web/index.html              纯前端单页应用（今日/卦象/门店/我的，开页自动查实时）
+web/mcd_live.js             浏览器侧 MCP 只读客户端（走站点自带中转，Token 可留空）
+web/mcd_data.js             真实数据快照（脱敏，可安全提交；实时查不到时兜底）
+server/server.js            麦当劳 MCP 只读中转（零依赖 Node 单文件，已托管部署）
+tools/mcp-proxy-worker.js   同一中转的 Cloudflare Worker 备选版（透传 Token）
 miniprogram/                小红书小程序版（结构就绪，待提交审核；app.js/app.json/app.css + pages/index/*.xhsml）
 miniprogram/data/mcd_real.js 同一份快照（小程序 require，兜底）
 miniprogram/utils/mcd_api.js 小程序端 MCP 只读客户端（实时优先，快照兜底）

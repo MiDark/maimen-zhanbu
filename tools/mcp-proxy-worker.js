@@ -1,5 +1,8 @@
 /**
- * 麦当劳 MCP 中转（Cloudflare Worker，单文件，免费额度足够个人用）
+ * 麦当劳 MCP 中转 —— Cloudflare Worker 备选版（主用方案见 server/server.js）
+ *
+ * 主方案：`server/server.js`（零依赖 Node 单文件），已用 WorkBuddy 应用托管部署，
+ *  网页版开页即实时，不用填 Token。本文件是同一中转的轻量备选，适合没有 Node 托管的环境。
  *
  * 为什么需要它：
  *   mcp.mcd.cn 不返回任何 `Access-Control-Allow-Origin` 头（OPTIONS 预检直接 403），
@@ -9,13 +12,14 @@
  * 部署（任选其一）：
  *   1) 网页版：https://workers.cloudflare.com → Create Worker → 粘贴本文件 → Deploy
  *   2) 命令行：npm i -g wrangler && wrangler deploy tools/mcp-proxy-worker.js --name mcd-proxy
- *   部署完拿到形如 https://mcd-proxy.<你的子域>.workers.dev 的地址，填进网页版即可。
+ *   部署完拿到形如 https://mcd-proxy.<你的子域>.workers.dev 的地址，填进网页版「中转地址」。
  *
  * 安全说明：
- *   - Token 由浏览器放在 `x-mcd-token` 头里透传，Worker 不写日志、不落库。
+ *   - Token 由浏览器放在 `x-mcd-token` 头里透传，Worker 不写日志、不落库（本版不内置 Token）。
  *   - 想限定只有自己的页面能用：在 Worker 设置里加环境变量
  *     ALLOW_ORIGIN = https://midark.github.io
  *   - 只允许 POST，且只转发到 mcp.mcd.cn，不做任意 URL 代理（避免被当开放代理用）。
+ *   - 与 server/server.js 的差别：不做方法/工具白名单，只透传——要白名单就用 Node 版。
  */
 
 const MCP_URL = "https://mcp.mcd.cn";

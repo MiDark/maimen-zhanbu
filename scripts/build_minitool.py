@@ -147,6 +147,13 @@ def build():
         sys.exit("没找到导出块标记")
     js = js[:a] + EXPORT_BLOCK + js[b + len("/* ── Toast ── */"):]
 
+    # 2.5) 实时取数整段删除：容器禁网，进度里也不该出现 fetch 字样
+    if "LIVE-JS-START" not in js or "LIVE-JS-END" not in js:
+        sys.exit("没找到实时取数代码标记（LIVE-JS-START/END）")
+    js = re.sub(r"/\* LIVE-JS-START.*?/\* LIVE-JS-END \*/\n*", "", js, flags=re.S)
+    if "fetch(" in js or "MCD_LIVE" in js:
+        sys.exit("实时取数代码没删干净")
+
     # 3) 内联脚本 → 外置引用
     html = html[:m.start()] + '<script src="./app.js"></script>' + html[m.end():]
 

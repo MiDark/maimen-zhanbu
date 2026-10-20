@@ -1,0 +1,5 @@
+{
+  "_说明": "复制成 config.json 再填。config.json 已在 .gitignore 里，绝不入库。",
+  "token": "在这里填麦当劳 MCP Token（open.mcd.cn/mcp 领取）",
+  "allowedOrigins": []
+}

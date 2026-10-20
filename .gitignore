@@ -19,6 +19,7 @@ fortune.json
 # 密钥类：绝不入库
 .mcd_token
 .env
+server/config.json
 
 # 截图临时产物
 .tmp_shots/

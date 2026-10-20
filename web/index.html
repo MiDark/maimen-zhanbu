@@ -711,22 +711,24 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
 
     <!-- LIVE-BLOCK-START 小工具构建时整块替换为离线提示 -->
     <div class="block" id="liveBlock">
-      <div class="bt">接入我自己的账号</div>
+      <div class="bt">接入真实数据</div>
       <div class="about">
-        填一次，就能查<b>你自己的积分</b>、<b>常去那家店</b>、<b>能领的券</b>，卦也跟着按你的实际门店算。
+        本站已内置一份<b>只读 Token</b>，不用填任何东西：打开就按<b>你的实时门店</b>、
+        <b>能领的券</b>、<b>今日活动</b>重算这一卦。
         <br><br>
-        Token 只存在这台设备的浏览器里，不会上传到任何地方。去
+        想换成<b>你自己</b>的账号（看你的积分和「我的券」），去
         <a id="tokenLink" href="https://open.mcd.cn/mcp" target="_blank" rel="noopener">open.mcd.cn/mcp</a>
-        手机号登录后进控制台领取，免费、只读。
+        手机号登录后领一串填进来，只在你这台设备的浏览器里生效。
+        <b>只读</b>，不下单、不领券、不抽奖。
       </div>
       <div class="form">
         <div class="fld">
           <label for="inToken">MCP Token</label>
-          <input id="inToken" class="long" type="password" autocomplete="off" placeholder="Bearer 后面那一串">
+          <input id="inToken" class="long" type="password" autocomplete="off" placeholder="可留空 · 留空就用站点内置的只读 Token">
         </div>
         <div class="fld">
           <label for="inProxy">中转地址</label>
-          <input id="inProxy" class="long" type="url" autocomplete="off" placeholder="https://mcd-proxy.你的子域.workers.dev">
+          <input id="inProxy" class="long" type="url" autocomplete="off" placeholder="默认已填好，一般不用动">
         </div>
         <div class="fld">
           <label for="inCity">城市</label>
@@ -739,8 +741,8 @@ main{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 20
       </div>
       <button class="btn" id="btnLive">查 我 的 实 时 数 据</button>
       <p class="note" id="liveHint">
-        麦当劳这个接口不允许浏览器直连（跨域被拦），所以需要一个中转。
-        中转只要部署一次：仓库里的 <b>tools/mcp-proxy-worker.js</b>，Cloudflare Worker 免费版即可。
+        麦当劳接口不允许浏览器直连（跨域被拦），所以由本站自带的中转服务转发，
+        只放行查询类工具。换城市 / 地标再点一次，卦会跟着变。
       </p>
     </div>
     <!-- LIVE-BLOCK-END -->
@@ -1773,7 +1775,8 @@ function toast(msg, ms){
 }
 
 /* ── 启动 ── */
-/* ── 接我自己的账号：填 Token + 中转，查实时门店/券/积分 ── */
+/* LIVE-JS-START 小工具构建时整段删除（容器禁网，连 fetch 字样都不留） */
+/* ── 接真实数据：内置中转（Token 可留空）+ 可换自己的 Token ── */
 const LIVE_KEY = "maimen.live";
 function liveLoad(){
   try { return JSON.parse(localStorage.getItem(LIVE_KEY) || "{}") || {}; } catch (e) { return {}; }
@@ -1781,51 +1784,67 @@ function liveLoad(){
 function liveSave(o){
   try { localStorage.setItem(LIVE_KEY, JSON.stringify(o)); } catch (e) { /* 小工具里可能不可用 */ }
 }
+function liveProxyDefault(){
+  return (window.MCD_LIVE && window.MCD_LIVE.DEFAULT_PROXY) || "";
+}
 function initLive(){
   if (!$("btnLive")) return;
   const saved = liveLoad();
   if (saved.token) $("inToken").value = saved.token;
-  if (saved.proxy) $("inProxy").value = saved.proxy;
+  $("inProxy").value = saved.proxy || liveProxyDefault();
   if (saved.city) $("inCity").value = saved.city;
   if (saved.keyword) $("inKeyword").value = saved.keyword;
 
-  $("btnLive").addEventListener("click", function(){
-    const token = ($("inToken").value || "").trim();
-    const proxy = ($("inProxy").value || "").trim();
-    const city = ($("inCity").value || "").trim();
-    const keyword = ($("inKeyword").value || "").trim();
-    if (!token) { toast("先填 Token"); return; }
-    if (!proxy) { toast("先填中转地址"); return; }
-    if (!window.MCD_LIVE) { toast("实时模块没加载，刷新试试"); return; }
+  $("btnLive").addEventListener("click", function(){ runLive(true); });
+}
 
-    liveSave({ token: token, proxy: proxy, city: city, keyword: keyword });
-    const btn = this;
-    btn.disabled = true;
-    setText("liveHint", "正在查，几秒钟…");
-    window.MCD_LIVE.consult(proxy, token, city, keyword).then(function(res){
-      btn.disabled = false;
-      if (!res.ok){
-        setText("liveHint", "没查到：" + (res.reason || "未知原因") + "。Token 是否过期？中转地址是否对？");
-        toast("没查到，检查 Token 和中转");
-        return;
-      }
-      REAL = res;
-      compute();
-      renderToday();
-      renderGua();
-      renderStore();
-      setText("liveHint", "已切到你自己的数据 · " + (res.fetched_at || "") + "（Token 已存在本机，下次打开还在）");
-      toast("查到了，卦按你的店重新算");
-      goView("store");
-    });
+function liveFields(){
+  return {
+    token: ($("inToken").value || "").trim(),
+    proxy: ($("inProxy").value || "").trim() || liveProxyDefault(),
+    city: ($("inCity").value || "").trim(),
+    keyword: ($("inKeyword").value || "").trim()
+  };
+}
+
+/* manual=true：用户点按钮（记进本机）；false：开页自动查一次（不落盘、不跳页） */
+function runLive(manual){
+  if (!window.MCD_LIVE) return;
+  const o = liveFields();
+  if (manual) liveSave({ token: o.token, proxy: o.proxy, city: o.city, keyword: o.keyword });
+
+  const btn = $("btnLive");
+  btn.disabled = true;
+  setText("liveHint", "正在查麦当劳的实时数据，几秒钟…");
+  window.MCD_LIVE.consult(o.proxy, o.token, o.city, o.keyword).then(function(res){
+    btn.disabled = false;
+    if (!res.ok){
+      setText("liveHint", "实时数据没取到（" + (res.reason || "未知原因")
+        + "），先按抓取快照算。换城市 / 地标再试，或填自己的 Token。");
+      if (manual) toast("没取到，检查 Token 或换个地标");
+      return;
+    }
+    REAL = res;
+    compute();
+    renderToday();
+    renderGua();
+    renderStore();
+    setText("liveHint", "已接入实时数据 · " + (res.fetched_at || "").slice(5, 16)
+      + (o.token ? "（用你自己的 Token）" : "（站点内置只读 Token）")
+      + " · 换城市 / 地标再点一次，卦跟着变");
+    if (manual){ toast("查到了，卦按你的店重算"); goView("store"); }
   });
 }
+
+/* 开页自动查一次真实数据：先出卦，再静默换源（失败就留在快照） */
+var BOOT_LIVE = function(){ if ($("btnLive")) runLive(false); };
+/* LIVE-JS-END */
 
 let START_NOW = new Date();
 (function boot(){
   initTabs();
   initForm();
-  initLive();
+  if (typeof initLive === "function") initLive();
   $("btnCard").addEventListener("click", openCard);
   $("sheetClose").addEventListener("click", function(){ $("sheet").classList.remove("on"); });
   $("sheet").addEventListener("click", function(e){ if (e.target === this) this.classList.remove("on"); });
@@ -1842,6 +1861,7 @@ let START_NOW = new Date();
   });
   $("btnAgain").addEventListener("click", function(){ ask(); });
   ask(true);
+  if (typeof BOOT_LIVE === "function") BOOT_LIVE();
 })();
 </script>
 </body>
